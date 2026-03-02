@@ -311,7 +311,7 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                         isSelected && styles.paymentChipSelected,
                       ]}
                       onPress={() => setValue("payment_method", pm.value)}
-                      activeOpacity={0.8}
+                      activeOpacity={0.75}
                       disabled={isSubmitting}
                     >
                       <Text
@@ -319,6 +319,7 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                           styles.paymentText,
                           isSelected && styles.paymentTextSelected,
                         ]}
+                        numberOfLines={1}
                       >
                         {pm.label}
                       </Text>
@@ -445,24 +446,28 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   paymentChip: {
-    paddingVertical: 8,
+    flexBasis: "47%",
+    flexGrow: 0,
+    paddingVertical: 11,
     paddingHorizontal: Spacing.md,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
+    alignItems: "center",
+    justifyContent: "center",
   },
   paymentChipSelected: {
     borderColor: Colors.primary,
-    backgroundColor: `${Colors.primary}18`,
+    backgroundColor: Colors.primary,
   },
   paymentText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
+    color: Colors.textPrimary,
     fontWeight: FontWeight.medium,
   },
   paymentTextSelected: {
-    color: Colors.primary,
+    color: Colors.white,
     fontWeight: FontWeight.semibold,
   },
 
