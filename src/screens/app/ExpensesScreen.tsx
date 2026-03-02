@@ -23,11 +23,14 @@ import {
   Radius,
 } from "../../utils/constants";
 import { formatCurrency, formatDate } from "../../utils/helpers";
-import type { Expense, ExpensesStackParamList } from "../../types";
+import type { Expense, TransactionsStackParamList } from "../../types";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Props = {
-  navigation: NativeStackNavigationProp<ExpensesStackParamList, "ExpenseList">;
+  navigation: NativeStackNavigationProp<
+    TransactionsStackParamList,
+    "ExpenseList"
+  >;
 };
 
 // ─── Expense Row ───────────────────────────────────────────────────────────────
@@ -192,15 +195,24 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
-        <Text style={styles.title}>Expenses</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate("AddExpense")}
-          activeOpacity={0.7}
-        >
-          <Feather name="plus" size={16} color={Colors.white} />
-          <Text style={styles.addText}>Add</Text>
-        </TouchableOpacity>
+        <Text style={styles.title}>Transactions</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => navigation.navigate("CategoryList")}
+            activeOpacity={0.7}
+          >
+            <Feather name="tag" size={18} color={Colors.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => navigation.navigate("AddExpense")}
+            activeOpacity={0.7}
+          >
+            <Feather name="plus" size={16} color={Colors.white} />
+            <Text style={styles.addText}>Add</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Error */}
@@ -261,6 +273,19 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.surfaceElevated,
+    alignItems: "center",
+    justifyContent: "center",
   },
   addButton: {
     flexDirection: "row",

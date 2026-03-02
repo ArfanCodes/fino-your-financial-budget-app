@@ -29,13 +29,16 @@ import {
 import { todayISO } from "../../utils/helpers";
 import type {
   AddExpenseFormValues,
-  ExpensesStackParamList,
+  TransactionsStackParamList,
   PaymentMethod,
 } from "../../types";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Props = {
-  navigation: NativeStackNavigationProp<ExpensesStackParamList, "AddExpense">;
+  navigation: NativeStackNavigationProp<
+    TransactionsStackParamList,
+    "AddExpense"
+  >;
 };
 
 // ─── Payment Method Options ────────────────────────────────────────────────────

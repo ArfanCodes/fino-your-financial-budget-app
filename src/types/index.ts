@@ -42,6 +42,7 @@ export type AuthStackParamList = {
 
 export type AppStackParamList = {
   MainTabs: undefined;
+  Settings: undefined;
 };
 
 export type RootStackParamList = {
@@ -50,31 +51,40 @@ export type RootStackParamList = {
 };
 
 export type TabParamList = {
-  Dashboard: undefined;
-  ExpensesTab: undefined;
-  Budget: undefined;
+  Overview: undefined;
+  TransactionsTab: undefined;
+  BudgetTab: undefined;
   Analytics: undefined;
-  Settings: undefined;
 };
 
-// ─── Expenses Stack (nested inside Expenses tab) ───────────────────────────────
-export type ExpensesStackParamList = {
+// ─── Transactions Stack (Transactions tab: list → add → categories) ───────────
+export type TransactionsStackParamList = {
   ExpenseList: undefined;
   AddExpense: { expenseId?: string } | undefined;
-};
-
-// ─── Categories Stack (legacy — kept for type compat) ────────────────────────
-export type CategoriesStackParamList = {
-  CategoryList: undefined;
-  AddCategory: undefined;
-};
-
-// ─── Settings Stack (Settings tab: Settings home → Categories → Add) ──────────
-export type SettingsStackParamList = {
-  SettingsHome: undefined;
   CategoryList: undefined;
   AddCategory: { fromAddExpense?: boolean } | undefined;
 };
+
+// ─── Budget Stack (Budget tab: home → categories) ────────────────────────────
+export type BudgetStackParamList = {
+  BudgetHome: undefined;
+  CategoryList: undefined;
+  AddCategory: { fromAddExpense?: boolean } | undefined;
+};
+
+// ─── Categories Stack (shared type for Categories + AddCategory screens) ──────
+export type CategoriesStackParamList = {
+  CategoryList: undefined;
+  AddCategory: { fromAddExpense?: boolean } | undefined;
+};
+
+// ─── Settings Stack (modal: Settings only) ────────────────────────────────────
+export type SettingsStackParamList = {
+  SettingsHome: undefined;
+};
+
+// ─── Expenses Stack (kept as alias for backward compat) ───────────────────────
+export type ExpensesStackParamList = TransactionsStackParamList;
 
 // ─── Category Types ────────────────────────────────────────────────────────────
 export interface Category {

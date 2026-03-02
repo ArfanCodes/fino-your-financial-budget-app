@@ -21,11 +21,14 @@ import {
   FontWeight,
   Radius,
 } from "../../utils/constants";
-import type { SettingsStackParamList, Category } from "../../types";
+import type { CategoriesStackParamList, Category } from "../../types";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Props = {
-  navigation: NativeStackNavigationProp<SettingsStackParamList, "CategoryList">;
+  navigation: NativeStackNavigationProp<
+    CategoriesStackParamList,
+    "CategoryList"
+  >;
 };
 
 // ─── Category Row ──────────────────────────────────────────────────────────────

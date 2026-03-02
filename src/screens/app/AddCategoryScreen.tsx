@@ -28,12 +28,15 @@ import {
 } from "../../utils/constants";
 import type {
   AddCategoryFormValues,
-  SettingsStackParamList,
+  CategoriesStackParamList,
 } from "../../types";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Props = {
-  navigation: NativeStackNavigationProp<SettingsStackParamList, "AddCategory">;
+  navigation: NativeStackNavigationProp<
+    CategoriesStackParamList,
+    "AddCategory"
+  >;
 };
 
 // ─── Preset Colors ─────────────────────────────────────────────────────────────
@@ -55,7 +58,7 @@ const PRESET_COLORS = [
 // ─── Add Category Screen ───────────────────────────────────────────────────────
 export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const route = useRoute<RouteProp<SettingsStackParamList, "AddCategory">>();
+  const route = useRoute<RouteProp<CategoriesStackParamList, "AddCategory">>();
   const fromAddExpense = route.params?.fromAddExpense ?? false;
   const addCategory = useFinanceStore((s) => s.addCategory);
   const [isSubmitting, setIsSubmitting] = useState(false);

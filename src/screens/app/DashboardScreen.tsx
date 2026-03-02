@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/auth.store";
@@ -24,7 +25,7 @@ import {
   Radius,
 } from "../../utils/constants";
 import { formatCurrency, formatDate, getInitials } from "../../utils/helpers";
-import type { Expense } from "../../types";
+import type { Expense, AppStackParamList } from "../../types";
 
 // ─── Transaction Row ───────────────────────────────────────────────────────────
 const TransactionRow: React.FC<{
@@ -116,6 +117,7 @@ const emptyStyles = StyleSheet.create({
 // ─── Dashboard Screen ──────────────────────────────────────────────────────────
 export const DashboardScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const user = useAuthStore((s) => s.user);
 
   const fetchExpenses = useFinanceStore((s) => s.fetchExpenses);
@@ -183,9 +185,13 @@ export const DashboardScreen: React.FC = () => {
               {user?.email}
             </Text>
           </View>
-          <View style={styles.avatar}>
+          <TouchableOpacity
+            style={styles.avatar}
+            onPress={() => navigation.navigate("Settings")}
+            activeOpacity={0.8}
+          >
             <Text style={styles.avatarText}>{initials}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* ── Spending Card ── */}

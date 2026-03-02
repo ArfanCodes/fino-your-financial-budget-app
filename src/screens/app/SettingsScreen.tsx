@@ -19,11 +19,11 @@ import {
   FontWeight,
   Radius,
 } from "../../utils/constants";
-import type { SettingsStackParamList } from "../../types";
+import type { AppStackParamList } from "../../types";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Props = {
-  navigation: NativeStackNavigationProp<SettingsStackParamList, "SettingsHome">;
+  navigation: NativeStackNavigationProp<AppStackParamList, "Settings">;
 };
 
 type FeatherIcon = React.ComponentProps<typeof Feather>["name"];
@@ -95,7 +95,15 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+        <View style={{ width: 32 }} />
         <Text style={styles.title}>Settings</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.backBtn}
+        >
+          <Feather name="x" size={20} color={Colors.textPrimary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -116,17 +124,6 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
             <Text style={styles.accountLabel}>Personal Account</Text>
           </View>
-        </View>
-
-        {/* Data */}
-        <SectionHeader title="Data" />
-        <View style={styles.group}>
-          <SettingsRow
-            icon="tag"
-            label="Manage Categories"
-            sublabel="Add or remove spending categories"
-            onPress={() => navigation.navigate("CategoryList")}
-          />
         </View>
 
         {/* Preferences */}
@@ -167,9 +164,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
   header: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.md,
+  },
+  backBtn: {
+    width: 32,
   },
   title: {
     fontSize: FontSize.xxl,

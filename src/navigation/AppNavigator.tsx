@@ -1,12 +1,14 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { DashboardScreen } from "../screens/app/DashboardScreen";
 import { ExpensesNavigator } from "./ExpensesNavigator";
+import { BudgetNavigator } from "./BudgetNavigator";
 import { SettingsNavigator } from "./SettingsNavigator";
-import type { TabParamList } from "../types";
+import type { TabParamList, AppStackParamList } from "../types";
 import {
   Colors,
   FontSize,
@@ -16,22 +18,23 @@ import {
 } from "../utils/constants";
 
 const Tab = createBottomTabNavigator<TabParamList>();
+const Stack = createNativeStackNavigator<AppStackParamList>();
 
 // ─── Icon map — Feather names per route ───────────────────────────────────────
 type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
 
 const TAB_ICONS: Record<keyof TabParamList, FeatherIconName> = {
-  Dashboard: "home",
-  ExpensesTab: "credit-card",
-  Budget: "pie-chart",
+  Overview: "home",
+  TransactionsTab: "credit-card",
+  BudgetTab: "pie-chart",
   Analytics: "bar-chart-2",
-  Settings: "settings",
 };
 
-// ─── Placeholder ──────────────────────────────────────────────────────────────
-const PlaceholderScreen: React.FC<{ name: string }> = ({ name }) => (
+// ─── Analytics Placeholder ────────────────────────────────────────────────────
+const AnalyticsPlaceholder: React.FC = () => (
   <View style={placeholder.container}>
-    <Text style={placeholder.text}>{name}</Text>
+    <Feather name="bar-chart-2" size={32} color={Colors.textMuted} />
+    <Text style={placeholder.text}>Analytics</Text>
     <Text style={placeholder.sub}>Coming soon</Text>
   </View>
 );
@@ -42,6 +45,7 @@ const placeholder = StyleSheet.create({
     backgroundColor: Colors.background,
     alignItems: "center",
     justifyContent: "center",
+    gap: Spacing.sm,
   },
   text: {
     fontSize: FontSize.lg,
@@ -51,18 +55,17 @@ const placeholder = StyleSheet.create({
   sub: {
     fontSize: FontSize.sm,
     color: Colors.textMuted,
-    marginTop: Spacing.xs,
   },
 });
 
-// ─── App Tab Navigator ─────────────────────────────────────────────────────────
-export const AppNavigator: React.FC = () => {
+// ─── Main Bottom Tabs ──────────────────────────────────────────────────────────
+const MainTabs: React.FC = () => {
   const insets = useSafeAreaInsets();
   const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
 
   return (
     <Tab.Navigator
-      initialRouteName="Dashboard"
+      initialRouteName="Overview"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: [
@@ -87,29 +90,44 @@ export const AppNavigator: React.FC = () => {
       })}
     >
       <Tab.Screen
-        name="Dashboard"
+        name="Overview"
         component={DashboardScreen}
-        options={{ tabBarLabel: "Home" }}
+        options={{ tabBarLabel: "Overview" }}
       />
       <Tab.Screen
-        name="ExpensesTab"
+        name="TransactionsTab"
         component={ExpensesNavigator}
-        options={{ tabBarLabel: "Expenses" }}
+        options={{ tabBarLabel: "Transactions" }}
       />
-      <Tab.Screen name="Budget" options={{ tabBarLabel: "Budget" }}>
-        {() => <PlaceholderScreen name="Budget" />}
-      </Tab.Screen>
-      <Tab.Screen name="Analytics" options={{ tabBarLabel: "Analytics" }}>
-        {() => <PlaceholderScreen name="Analytics" />}
-      </Tab.Screen>
       <Tab.Screen
-        name="Settings"
-        component={SettingsNavigator}
-        options={{ tabBarLabel: "Settings" }}
+        name="BudgetTab"
+        component={BudgetNavigator}
+        options={{ tabBarLabel: "Budget" }}
+      />
+      <Tab.Screen
+        name="Analytics"
+        component={AnalyticsPlaceholder}
+        options={{ tabBarLabel: "Analytics" }}
       />
     </Tab.Navigator>
   );
 };
+
+// ─── App Navigator (Stack: tabs + Settings modal) ─────────────────────────────
+export const AppNavigator: React.FC = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="MainTabs" component={MainTabs} />
+    <Stack.Screen
+      name="Settings"
+      component={SettingsNavigator}
+      options={{
+        presentation: "modal",
+        animation: "slide_from_bottom",
+        contentStyle: { backgroundColor: Colors.background },
+      }}
+    />
+  </Stack.Navigator>
+);
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
