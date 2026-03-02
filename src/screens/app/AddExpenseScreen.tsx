@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,9 @@ import {
   Pressable,
   Alert,
   StatusBar,
+  TextInput,
 } from "react-native";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -42,12 +44,12 @@ type Props = {
 };
 
 // ─── Payment Method Options ────────────────────────────────────────────────────
-const PAYMENT_METHODS: { label: string; value: PaymentMethod }[] = [
-  { label: "Cash", value: "cash" },
-  { label: "Card", value: "card" },
-  { label: "UPI", value: "upi" },
-  { label: "Bank Transfer", value: "bank_transfer" },
-  { label: "Other", value: "other" },
+const PAYMENT_METHODS: { label: string; value: PaymentMethod; icon: string }[] = [
+  { label: "Cash", value: "cash", icon: "dollar-sign" },
+  { label: "Card", value: "card", icon: "credit-card" },
+  { label: "UPI", value: "upi", icon: "smartphone" },
+  { label: "Bank Transfer", value: "bank_transfer", icon: "repeat" },
+  { label: "Other", value: "other", icon: "more-horizontal" },
 ];
 
 // ─── Add Expense Screen ────────────────────────────────────────────────────────
@@ -59,6 +61,7 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
   const categoriesLoading = useFinanceStore((s) => s.categoriesLoading);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const {
     control,
@@ -79,6 +82,30 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
 
   const watchCategoryId = watch("category_id");
   const watchPaymentMethod = watch("payment_method");
+  const watchDate = watch("date");
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  /** Format a raw numeric string with Indian comma grouping for display */
+  const formatAmountDisplay = useCallback((raw: string): string => {
+    if (!raw) return "";
+    // Split integer and decimal parts
+    const [intPart, decPart] = raw.split(".");
+    const formatted = new Intl.NumberFormat("en-IN").format(
+      parseInt(intPart || "0", 10)
+    );
+    return decPart !== undefined ? `${formatted}.${decPart}` : formatted;
+  }, []);
+
+  /** Display the selected date nicely */
+  const displayDate = useCallback((iso: string): string => {
+    if (!iso) return "";
+    const d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -104,7 +131,7 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
       setIsSubmitting(false);
       Alert.alert("Error", error);
     } else {
-      navigation.goBack(); // component unmounts — no further state updates needed
+      navigation.goBack();
     }
   };
 
@@ -112,19 +139,60 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
-      {/* Header — outside ScrollView so back button is always accessible */}
+      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
         <Pressable
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
           disabled={isSubmitting}
-          style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+          style={({ pressed }) => [styles.backButton, { opacity: pressed ? 0.5 : 1 }]}
         >
-          <Feather name="arrow-left" size={22} color={Colors.textPrimary} />
+          <Feather name="arrow-left" size={20} color={Colors.textPrimary} />
         </Pressable>
         <Text style={styles.title}>Add Expense</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 40 }} />
       </View>
+
+      {/* Amount Hero Card */}
+      <Controller
+        control={control}
+        name="amount"
+        rules={{
+          required: "Amount is required",
+          validate: (v) => {
+            const n = parseFloat(v);
+            return (!isNaN(n) && n > 0) || "Enter an amount greater than 0";
+          },
+        }}
+        render={({ field: { onChange, onBlur, value } }) => (
+          <View style={styles.amountCard}>
+            <Text style={styles.amountLabel}>AMOUNT</Text>
+            <View style={styles.amountRow}>
+              <Text style={styles.currencySymbol}>₹</Text>
+              <TextInput
+                style={[styles.amountDisplay, !value && styles.amountPlaceholder]}
+                placeholder="0.00"
+                placeholderTextColor={Colors.textMuted}
+                keyboardType="decimal-pad"
+                returnKeyType="next"
+                value={formatAmountDisplay(value)}
+                onChangeText={(text) => {
+                  // Strip commas before storing — keep only digits and one dot
+                  const raw = text.replace(/,/g, "");
+                  onChange(raw);
+                }}
+                onBlur={onBlur}
+                editable={!isSubmitting}
+                selectionColor={Colors.primary}
+                cursorColor={Colors.primary}
+              />
+            </View>
+            {errors.amount && (
+              <Text style={styles.amountError}>{errors.amount.message}</Text>
+            )}
+          </View>
+        )}
+      />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -138,223 +206,227 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Amount */}
-          <Controller
-            control={control}
-            name="amount"
-            rules={{
-              required: "Amount is required",
-              validate: (v) => {
-                const n = parseFloat(v);
-                return (!isNaN(n) && n > 0) || "Enter an amount greater than 0";
-              },
-            }}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <InputField
-                label="Amount"
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-                returnKeyType="next"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.amount?.message}
-                editable={!isSubmitting}
-              />
-            )}
-          />
+          {/* Category Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Feather name="tag" size={14} color={Colors.primary} />
+              <Text style={styles.sectionLabel}>Category</Text>
+              {errors.category_id && (
+                <Text style={styles.errorLabel}>{errors.category_id.message}</Text>
+              )}
+            </View>
 
-          {/* Category */}
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionLabel}>Category</Text>
-            {errors.category_id && (
-              <Text style={styles.errorLabel}>
-                {errors.category_id.message}
-              </Text>
-            )}
-          </View>
-
-          <Controller
-            control={control}
-            name="category_id"
-            rules={{ required: "Please select a category" }}
-            render={({ field: { value } }) => (
-              <>
-                {categoriesLoading ? (
-                  <Text style={styles.loadingText}>Loading categories...</Text>
-                ) : categories.length === 0 ? (
-                  <TouchableOpacity
-                    style={styles.noCategoryBox}
-                    onPress={() =>
-                      navigation.dispatch(
-                        CommonActions.navigate({
-                          name: "Settings",
-                          params: { screen: "CategoryList" },
-                        }),
-                      )
-                    }
-                    disabled={isSubmitting}
-                  >
-                    <Feather
-                      name="alert-circle"
-                      size={14}
-                      color={Colors.warning}
-                    />
-                    <Text style={styles.noCategoryText}>
-                      No categories found. Tap to setup categories in Settings.
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.categoryGrid}>
-                    {categories.map((cat) => {
-                      const isSelected = value === cat.id;
-                      return (
-                        <TouchableOpacity
-                          key={cat.id}
-                          style={[
-                            styles.categoryChip,
-                            isSelected && {
-                              borderColor: cat.color,
-                              backgroundColor: cat.color,
-                            },
-                          ]}
-                          onPress={() =>
-                            setValue("category_id", cat.id, {
-                              shouldValidate: true,
-                            })
-                          }
-                          activeOpacity={0.75}
-                          disabled={isSubmitting}
-                        >
-                          <View
+            <Controller
+              control={control}
+              name="category_id"
+              rules={{ required: "Please select a category" }}
+              render={({ field: { value } }) => (
+                <>
+                  {categoriesLoading ? (
+                    <Text style={styles.loadingText}>Loading categories...</Text>
+                  ) : categories.length === 0 ? (
+                    <TouchableOpacity
+                      style={styles.noCategoryBox}
+                      onPress={() => navigation.navigate("CategoryList")}
+                      disabled={isSubmitting}
+                    >
+                      <View style={styles.noCategoryIconWrap}>
+                        <Feather name="alert-circle" size={16} color={Colors.warning} />
+                      </View>
+                      <Text style={styles.noCategoryText}>
+                        No categories found. Tap to set up in Settings.
+                      </Text>
+                      <Feather name="chevron-right" size={14} color={Colors.warning} />
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={styles.categoryGrid}>
+                      {categories.map((cat) => {
+                        const isSelected = value === cat.id;
+                        return (
+                          <TouchableOpacity
+                            key={cat.id}
                             style={[
-                              styles.categoryDot,
-                              {
-                                backgroundColor: isSelected
-                                  ? "rgba(255,255,255,0.85)"
-                                  : cat.color,
+                              styles.categoryChip,
+                              isSelected && {
+                                borderColor: cat.color,
+                                backgroundColor: `${cat.color}22`,
                               },
                             ]}
-                          />
-                          <Text
-                            style={[
-                              styles.categoryChipText,
-                              isSelected && { color: Colors.white },
-                            ]}
-                            numberOfLines={1}
+                            onPress={() =>
+                              setValue("category_id", cat.id, {
+                                shouldValidate: true,
+                              })
+                            }
+                            activeOpacity={0.75}
+                            disabled={isSubmitting}
                           >
-                            {cat.name}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                    {/* Add Category shortcut */}
-                    <TouchableOpacity
-                      style={styles.addCategoryChip}
-                      onPress={() =>
-                        navigation.dispatch(
-                          CommonActions.navigate({
-                            name: "Settings",
-                            params: {
-                              screen: "AddCategory",
-                              params: { fromAddExpense: true },
-                            },
-                          }),
-                        )
-                      }
-                      activeOpacity={0.75}
-                      disabled={isSubmitting}
-                    >
-                      <Feather
-                        name="plus"
-                        size={16}
-                        color={Colors.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </>
-            )}
-          />
-
-          {/* Date */}
-          <Controller
-            control={control}
-            name="date"
-            rules={{
-              required: "Date is required",
-              pattern: {
-                value: /^\d{4}-\d{2}-\d{2}$/,
-                message: "Use YYYY-MM-DD format",
-              },
-            }}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <InputField
-                label="Date"
-                placeholder={todayISO()}
-                keyboardType="numbers-and-punctuation"
-                returnKeyType="next"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.date?.message}
-                editable={!isSubmitting}
-              />
-            )}
-          />
-
-          {/* Note */}
-          <Controller
-            control={control}
-            name="note"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <InputField
-                label="Note (optional)"
-                placeholder="What was this for?"
-                returnKeyType="done"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                editable={!isSubmitting}
-              />
-            )}
-          />
-
-          {/* Payment Method */}
-          <Text style={styles.sectionLabel}>Payment Method</Text>
-          <Controller
-            control={control}
-            name="payment_method"
-            render={({ field: { value } }) => (
-              <View style={styles.paymentGrid}>
-                {PAYMENT_METHODS.map((pm) => {
-                  const isSelected = value === pm.value;
-                  return (
-                    <TouchableOpacity
-                      key={pm.value}
-                      style={[
-                        styles.paymentChip,
-                        isSelected && styles.paymentChipSelected,
-                      ]}
-                      onPress={() => setValue("payment_method", pm.value)}
-                      activeOpacity={0.75}
-                      disabled={isSubmitting}
-                    >
-                      <Text
-                        style={[
-                          styles.paymentText,
-                          isSelected && styles.paymentTextSelected,
-                        ]}
-                        numberOfLines={1}
+                            <View
+                              style={[
+                                styles.categoryDot,
+                                { backgroundColor: cat.color },
+                                isSelected && styles.categoryDotSelected,
+                              ]}
+                            />
+                            <Text
+                              style={[
+                                styles.categoryChipText,
+                                isSelected && { color: cat.color, fontWeight: FontWeight.semibold },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {cat.name}
+                            </Text>
+                            {isSelected && (
+                              <Feather name="check" size={12} color={cat.color} />
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                      {/* Add Category shortcut */}
+                      <TouchableOpacity
+                        style={styles.addCategoryChip}
+                        onPress={() =>
+                          navigation.navigate("AddCategory", {
+                            fromAddExpense: true,
+                          })
+                        }
+                        activeOpacity={0.75}
+                        disabled={isSubmitting}
                       >
-                        {pm.label}
+                        <Feather name="plus" size={16} color={Colors.textSecondary} />
+                        <Text style={styles.addCategoryText}>New</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </>
+              )}
+            />
+          </View>
+
+          {/* Date & Note Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Feather name="calendar" size={14} color={Colors.primary} />
+              <Text style={styles.sectionLabel}>Details</Text>
+            </View>
+            {/* Date Picker Trigger */}
+            <Controller
+              control={control}
+              name="date"
+              rules={{ required: "Date is required" }}
+              render={({ field: { onChange, value } }) => (
+                <>
+                  <TouchableOpacity
+                    style={[
+                      styles.datePickerBtn,
+                      errors.date && styles.datePickerBtnError,
+                    ]}
+                    onPress={() => setShowDatePicker(true)}
+                    disabled={isSubmitting}
+                    activeOpacity={0.75}
+                  >
+                    <View style={styles.datePickerIconWrap}>
+                      <Feather name="calendar" size={16} color={Colors.primary} />
+                    </View>
+                    <View style={styles.datePickerInfo}>
+                      <Text style={styles.datePickerLabel}>Date</Text>
+                      <Text style={styles.datePickerValue}>
+                        {value ? displayDate(value) : "Select a date"}
                       </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
-          />
+                    </View>
+                    <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+                  </TouchableOpacity>
+                  {errors.date && (
+                    <Text style={styles.dateError}>{errors.date.message}</Text>
+                  )}
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={value ? new Date(value + "T00:00:00") : new Date()}
+                      mode="date"
+                      display={Platform.OS === "ios" ? "spinner" : "default"}
+                      maximumDate={new Date()}
+                      onChange={(_event: DateTimePickerEvent, selected?: Date) => {
+                        setShowDatePicker(Platform.OS === "ios");
+                        if (selected) {
+                          const iso = selected.toISOString().split("T")[0];
+                          onChange(iso);
+                        }
+                      }}
+                    />
+                  )}
+                </>
+              )}
+            />
+            <Controller
+              control={control}
+              name="note"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <InputField
+                  label="Note (optional)"
+                  placeholder="What was this for?"
+                  returnKeyType="done"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  editable={!isSubmitting}
+                  leftIcon={<Feather name="file-text" size={16} color={Colors.textMuted} />}
+                />
+              )}
+            />
+          </View>
+
+          {/* Payment Method Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Feather name="credit-card" size={14} color={Colors.primary} />
+              <Text style={styles.sectionLabel}>Payment Method</Text>
+            </View>
+            <Controller
+              control={control}
+              name="payment_method"
+              render={({ field: { value } }) => (
+                <View style={styles.paymentGrid}>
+                  {PAYMENT_METHODS.map((pm) => {
+                    const isSelected = value === pm.value;
+                    return (
+                      <TouchableOpacity
+                        key={pm.value}
+                        style={[
+                          styles.paymentChip,
+                          isSelected && styles.paymentChipSelected,
+                        ]}
+                        onPress={() => setValue("payment_method", pm.value)}
+                        activeOpacity={0.75}
+                        disabled={isSubmitting}
+                      >
+                        <View
+                          style={[
+                            styles.paymentIconWrap,
+                            isSelected && styles.paymentIconWrapSelected,
+                          ]}
+                        >
+                          <Feather
+                            name={pm.icon as any}
+                            size={14}
+                            color={isSelected ? Colors.white : Colors.textSecondary}
+                          />
+                        </View>
+                        <Text
+                          style={[
+                            styles.paymentText,
+                            isSelected && styles.paymentTextSelected,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {pm.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            />
+          </View>
 
           <View style={styles.spacer} />
 
@@ -382,33 +454,100 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxl,
   },
 
+  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surfaceElevated,
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
-    fontSize: FontSize.xl,
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
+    letterSpacing: 0.2,
   },
 
-  sectionContainer: {
+  // Amount card
+  amountCard: {
+    marginHorizontal: Spacing.lg,
+    marginVertical: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xs,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+  },
+  amountLabel: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textMuted,
+    letterSpacing: 1.2,
+    marginBottom: Spacing.xs,
+  },
+  amountRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  currencySymbol: {
+    fontSize: FontSize.xxl,
+    fontWeight: FontWeight.bold,
+    color: Colors.primary,
+    lineHeight: 44,
+  },
+  amountDisplay: {
+    fontSize: 40,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    flex: 1,
+    lineHeight: 52,
+    paddingVertical: 0,
+    includeFontPadding: false,
+  },
+  amountPlaceholder: {
+    color: Colors.textMuted,
+  },
+  amountError: {
+    fontSize: FontSize.xs,
+    color: Colors.danger,
+    marginTop: 4,
+    fontWeight: FontWeight.medium,
+  },
+
+  // Sections
+  section: {
+    marginBottom: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: Spacing.sm,
-    marginTop: Spacing.xs,
+    gap: 6,
+    marginBottom: Spacing.md,
   },
   sectionLabel: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.semibold,
     color: Colors.textMuted,
-    letterSpacing: 0.8,
+    letterSpacing: 0.9,
     textTransform: "uppercase",
+    flex: 1,
   },
   errorLabel: {
     fontSize: 10,
@@ -420,16 +559,25 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginBottom: Spacing.md,
   },
+
+  // No category
   noCategoryBox: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.xs,
+    gap: Spacing.sm,
     backgroundColor: `${Colors.warning}12`,
     borderRadius: Radius.md,
     padding: Spacing.md,
-    marginBottom: Spacing.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: `${Colors.warning}40`,
+  },
+  noCategoryIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: `${Colors.warning}20`,
+    alignItems: "center",
+    justifyContent: "center",
   },
   noCategoryText: {
     color: Colors.warning,
@@ -437,75 +585,152 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  // Category grid
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.sm,
-    marginBottom: Spacing.md,
   },
   categoryChip: {
     flexDirection: "row",
     alignItems: "center",
-    // Two chips per row with gap accounted for
     flexBasis: "47%",
     flexGrow: 1,
-    paddingVertical: 11,
-    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.sm,
     borderRadius: Radius.lg,
     backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.surfaceBorder,
-    gap: 8,
+    gap: 7,
   },
-  addCategoryChip: {
-    width: 52,
-    height: 43,
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
-    borderStyle: "dashed",
-    alignItems: "center",
-    justifyContent: "center",
+  categoryDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    flexShrink: 0,
   },
-  categoryDot: { width: 9, height: 9, borderRadius: 5, flexShrink: 0 },
+  categoryDotSelected: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
   categoryChipText: {
     fontSize: FontSize.sm,
-    color: Colors.textPrimary,
+    color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
     flex: 1,
   },
+  addCategoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1.5,
+    borderColor: Colors.surfaceBorder,
+    borderStyle: "dashed",
+  },
+  addCategoryText: {
+    fontSize: FontSize.sm,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.medium,
+  },
 
+  // Payment method
   paymentGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.sm,
-    marginBottom: Spacing.lg,
   },
   paymentChip: {
-    flexBasis: "47%",
-    flexGrow: 0,
-    paddingVertical: 11,
-    paddingHorizontal: Spacing.md,
+    flexBasis: "30%",
+    flexGrow: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.sm,
     borderRadius: Radius.lg,
     backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.surfaceBorder,
-    alignItems: "center",
-    justifyContent: "center",
   },
   paymentChipSelected: {
     borderColor: Colors.primary,
+    backgroundColor: `${Colors.primary}18`,
+  },
+  paymentIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: Colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  paymentIconWrapSelected: {
     backgroundColor: Colors.primary,
   },
   paymentText: {
     fontSize: FontSize.sm,
-    color: Colors.textPrimary,
+    color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
+    flex: 1,
   },
   paymentTextSelected: {
-    color: Colors.white,
+    color: Colors.primary,
     fontWeight: FontWeight.semibold,
+  },
+
+  // Date picker
+  datePickerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    backgroundColor: Colors.surfaceElevated,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.surfaceBorder,
+    paddingVertical: 12,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  datePickerBtnError: {
+    borderColor: Colors.danger,
+  },
+  datePickerIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: `${Colors.primary}18`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  datePickerInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  datePickerLabel: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.medium,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  datePickerValue: {
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    fontWeight: FontWeight.semibold,
+  },
+  dateError: {
+    fontSize: FontSize.xs,
+    color: Colors.danger,
+    marginTop: -Spacing.sm,
+    marginBottom: Spacing.sm,
+    marginLeft: 2,
+    fontWeight: FontWeight.medium,
   },
 
   spacer: { flex: 1, minHeight: Spacing.lg },
