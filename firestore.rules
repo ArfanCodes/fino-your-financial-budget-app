@@ -1,0 +1,35 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper: caller is signed-in ──────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // ── Helper: caller owns the document (existing doc) ──────────────────────
+    function isOwner() {
+      return request.auth.uid == resource.data.user_id;
+    }
+
+    // ── Helper: caller owns the document being written (new doc) ────────────
+    function isWritingAsOwner() {
+      return request.auth.uid == request.resource.data.user_id;
+    }
+
+    // ── Expenses ─────────────────────────────────────────────────────────────
+    match /expenses/{expenseId} {
+      allow read,  delete: if isAuth() && isOwner();
+      allow create:        if isAuth() && isWritingAsOwner();
+      allow update:        if isAuth() && isOwner() && isWritingAsOwner();
+    }
+
+    // ── Categories ───────────────────────────────────────────────────────────
+    match /categories/{categoryId} {
+      allow read,  delete: if isAuth() && isOwner();
+      allow create:        if isAuth() && isWritingAsOwner();
+      allow update:        if isAuth() && isOwner() && isWritingAsOwner();
+    }
+  }
+}

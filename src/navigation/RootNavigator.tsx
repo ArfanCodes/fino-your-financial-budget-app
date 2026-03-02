@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuthStore } from '../store/auth.store';
-import { AuthNavigator } from './AuthNavigator';
-import { AppNavigator } from './AppNavigator';
-import { ScreenLoader } from '../components/ScreenLoader';
-import { Colors } from '../utils/constants';
-import type { RootStackParamList } from '../types';
+import React, { useEffect } from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useAuthStore } from "../store/auth.store";
+import { AuthNavigator } from "./AuthNavigator";
+import { AppNavigator } from "./AppNavigator";
+import { ScreenLoader } from "../components/ScreenLoader";
+import { Colors } from "../utils/constants";
+import type { RootStackParamList } from "../types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -34,7 +34,7 @@ export const RootNavigator: React.FC = () => {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: Colors.background },
-        animation: 'fade',
+        animation: "fade",
         animationDuration: 300,
       }}
     >

@@ -1,10 +1,10 @@
-import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { SettingsScreen } from '../screens/app/SettingsScreen';
-import { CategoriesScreen } from '../screens/app/CategoriesScreen';
-import { AddCategoryScreen } from '../screens/app/AddCategoryScreen';
-import type { SettingsStackParamList } from '../types';
-import { Colors } from '../utils/constants';
+import React from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { SettingsScreen } from "../screens/app/SettingsScreen";
+import { CategoriesScreen } from "../screens/app/CategoriesScreen";
+import { AddCategoryScreen } from "../screens/app/AddCategoryScreen";
+import type { SettingsStackParamList } from "../types";
+import { Colors } from "../utils/constants";
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
 
@@ -15,7 +15,7 @@ export const SettingsNavigator: React.FC = () => (
     screenOptions={{
       headerShown: false,
       contentStyle: { backgroundColor: Colors.background },
-      animation: 'slide_from_right',
+      animation: "slide_from_right",
     }}
   >
     <Stack.Screen name="SettingsHome" component={SettingsScreen} />

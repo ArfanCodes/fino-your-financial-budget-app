@@ -31,7 +31,7 @@ export interface AddCategoryFormValues {
 }
 
 // ─── PaymentMethod (kept near form types for reference) ───────────────────────
-export type PaymentMethod = 'cash' | 'card' | 'upi' | 'bank_transfer' | 'other';
+export type PaymentMethod = "cash" | "card" | "upi" | "bank_transfer" | "other";
 
 // ─── Navigation Types ──────────────────────────────────────────────────────────
 export type AuthStackParamList = {
@@ -73,7 +73,7 @@ export type CategoriesStackParamList = {
 export type SettingsStackParamList = {
   SettingsHome: undefined;
   CategoryList: undefined;
-  AddCategory: undefined;
+  AddCategory: { fromAddExpense?: boolean } | undefined;
 };
 
 // ─── Category Types ────────────────────────────────────────────────────────────

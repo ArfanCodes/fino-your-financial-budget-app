@@ -245,6 +245,29 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                         </TouchableOpacity>
                       );
                     })}
+                    {/* Add Category shortcut */}
+                    <TouchableOpacity
+                      style={styles.addCategoryChip}
+                      onPress={() =>
+                        navigation.dispatch(
+                          CommonActions.navigate({
+                            name: "Settings",
+                            params: {
+                              screen: "AddCategory",
+                              params: { fromAddExpense: true },
+                            },
+                          }),
+                        )
+                      }
+                      activeOpacity={0.75}
+                      disabled={isSubmitting}
+                    >
+                      <Feather
+                        name="plus"
+                        size={16}
+                        color={Colors.textSecondary}
+                      />
+                    </TouchableOpacity>
                   </View>
                 )}
               </>
@@ -430,6 +453,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
     gap: 8,
+  },
+  addCategoryChip: {
+    width: 52,
+    height: 43,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
   },
   categoryDot: { width: 9, height: 9, borderRadius: 5, flexShrink: 0 },
   categoryChipText: {

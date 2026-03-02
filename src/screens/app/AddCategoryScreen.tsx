@@ -14,6 +14,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useRoute, RouteProp } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFinanceStore } from "../../store/finance.store";
 import { Button } from "../../components/Button";
@@ -54,6 +55,8 @@ const PRESET_COLORS = [
 // ─── Add Category Screen ───────────────────────────────────────────────────────
 export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const route = useRoute<RouteProp<SettingsStackParamList, "AddCategory">>();
+  const fromAddExpense = route.params?.fromAddExpense ?? false;
   const addCategory = useFinanceStore((s) => s.addCategory);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[7]);
@@ -88,7 +91,11 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
       {/* Header — outside ScrollView so back button is always accessible */}
       <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
         <Pressable
-          onPress={() => navigation.goBack()}
+          onPress={() =>
+            fromAddExpense
+              ? navigation.navigate("CategoryList")
+              : navigation.goBack()
+          }
           hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
           style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
         >
