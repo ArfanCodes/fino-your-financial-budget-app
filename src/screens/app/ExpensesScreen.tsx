@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   RefreshControl,
   StatusBar,
 } from "react-native";
+import { ConfirmModal } from "../../components/ConfirmModal";
 import { Feather } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
@@ -128,6 +129,8 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
   const fetchCategories = useFinanceStore((s) => s.fetchCategories);
   const removeExpense = useFinanceStore((s) => s.removeExpense);
 
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
   const categoryMap = React.useMemo(() => {
     const map = new Map<string, { name: string; color: string }>();
     categories.forEach((c) => map.set(c.id, { name: c.name, color: c.color }));
@@ -141,22 +144,13 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
     }, []),
   );
 
-  const handleDelete = (id: string) => {
-    Alert.alert(
-      "Delete Expense",
-      "Are you sure you want to delete this expense?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            const error = await removeExpense(id);
-            if (error) Alert.alert("Error", error);
-          },
-        },
-      ],
-    );
+  const handleDelete = (id: string) => setDeleteId(id);
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    const error = await removeExpense(deleteId);
+    setDeleteId(null);
+    if (error) Alert.alert("Error", error);
   };
 
   const renderItem = useCallback(
@@ -193,7 +187,15 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
-      {/* Header */}
+      <ConfirmModal
+        visible={!!deleteId}
+        title="Delete Expense"
+        message="This expense will be permanently removed."
+        confirmLabel="Delete"
+        icon="trash-2"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteId(null)}
+      />
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
         <Text style={styles.title}>Transactions</Text>
         <View style={styles.headerActions}>

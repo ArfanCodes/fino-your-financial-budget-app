@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   StatusBar,
 } from "react-native";
+import { ConfirmModal } from "../../components/ConfirmModal";
 import { Feather } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
@@ -31,50 +32,158 @@ type Props = {
   >;
 };
 
-// ─── Category Row ──────────────────────────────────────────────────────────────
-const CategoryRow: React.FC<{
+// ─── Category Card ─────────────────────────────────────────────────────────────
+const CategoryCard: React.FC<{
   item: Category;
   onDelete: (id: string, name: string) => void;
 }> = React.memo(({ item, onDelete }) => (
-  <View style={rowStyles.container}>
-    <View style={[rowStyles.swatch, { backgroundColor: item.color }]} />
-    <Text style={rowStyles.name} numberOfLines={1}>
-      {item.name}
-    </Text>
-    <TouchableOpacity
-      onPress={() => onDelete(item.id, item.name)}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      style={rowStyles.deleteBtn}
-      accessibilityLabel={`Delete ${item.name}`}
-    >
-      <Feather name="trash-2" size={15} color={Colors.textMuted} />
-    </TouchableOpacity>
+  <View style={cardStyles.card}>
+    {/* Colored top accent bar */}
+    <View style={[cardStyles.accentBar, { backgroundColor: item.color }]} />
+
+    <View style={cardStyles.body}>
+      {/* Icon bubble */}
+      <View
+        style={[cardStyles.iconBubble, { backgroundColor: `${item.color}22` }]}
+      >
+        <View style={[cardStyles.iconDot, { backgroundColor: item.color }]} />
+      </View>
+
+      {/* Name */}
+      <Text style={cardStyles.name} numberOfLines={2}>
+        {item.name}
+      </Text>
+
+      {/* Delete */}
+      <TouchableOpacity
+        onPress={() => onDelete(item.id, item.name)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        style={cardStyles.deleteBtn}
+        accessibilityLabel={`Delete ${item.name}`}
+      >
+        <Feather name="trash-2" size={13} color={Colors.textMuted} />
+      </TouchableOpacity>
+    </View>
   </View>
 ));
 
-const rowStyles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.surfaceBorder,
+const cardStyles = StyleSheet.create({
+  card: {
+    flex: 1,
+    margin: Spacing.xs,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.surfaceBorder,
+    overflow: "hidden",
   },
-  swatch: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: Spacing.md,
+  accentBar: {
+    height: 3,
+    width: "100%",
+  },
+  body: {
+    padding: Spacing.md,
+    gap: Spacing.sm,
+  },
+  iconBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   name: {
-    flex: 1,
     fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
     color: Colors.textPrimary,
-    fontWeight: FontWeight.medium,
+    flex: 1,
   },
   deleteBtn: {
-    paddingLeft: Spacing.md,
+    alignSelf: "flex-end",
+    padding: 2,
+  },
+});
+
+// ─── Empty State ───────────────────────────────────────────────────────────────
+const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
+  <View style={emptyStyles.container}>
+    <View style={emptyStyles.iconRing}>
+      <View style={emptyStyles.iconInner}>
+        <Feather name="tag" size={26} color={Colors.primary} />
+      </View>
+    </View>
+    <Text style={emptyStyles.title}>No categories yet</Text>
+    <Text style={emptyStyles.subtitle}>
+      Create categories to organise{"\n"}your expenses by type
+    </Text>
+    <TouchableOpacity
+      style={emptyStyles.cta}
+      onPress={onAdd}
+      activeOpacity={0.8}
+    >
+      <Feather name="plus" size={16} color={Colors.white} />
+      <Text style={emptyStyles.ctaText}>Create first category</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+const emptyStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xxxl,
+    gap: Spacing.sm,
+  },
+  iconRing: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.sm,
+  },
+  iconInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: `${Colors.primary}18`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: FontSize.sm,
+    color: Colors.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  cta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    backgroundColor: Colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.full,
+    marginTop: Spacing.md,
+  },
+  ctaText: {
+    color: Colors.white,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
   },
 });
 
@@ -87,6 +196,11 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
   const fetchCategories = useFinanceStore((s) => s.fetchCategories);
   const removeCategory = useFinanceStore((s) => s.removeCategory);
 
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
   useFocusEffect(
     useCallback(() => {
       fetchCategories();
@@ -94,44 +208,32 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   const handleDelete = (id: string, name: string) => {
-    Alert.alert(
-      "Delete Category",
-      `Delete "${name}"? Expenses in this category will not be deleted.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            const error = await removeCategory(id);
-            if (error) Alert.alert("Error", error);
-          },
-        },
-      ],
-    );
+    setDeleteTarget({ id, name });
   };
 
-  const renderEmpty = () => {
-    if (categoriesLoading) return null;
-    return (
-      <View style={styles.emptyContainer}>
-        <View style={styles.emptyIconWrap}>
-          <Feather name="tag" size={20} color={Colors.textMuted} />
-        </View>
-        <Text style={styles.emptyTitle}>No categories yet</Text>
-        <Text style={styles.emptySubtitle}>
-          Tap Add to create your first category
-        </Text>
-      </View>
-    );
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const error = await removeCategory(deleteTarget.id);
+    setDeleteTarget(null);
+    if (error) Alert.alert("Error", error);
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
+      <ConfirmModal
+        visible={!!deleteTarget}
+        title="Delete Category"
+        message={`Delete "${deleteTarget?.name}"? Expenses in this category will not be deleted.`}
+        confirmLabel="Delete"
+        icon="trash-2"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -139,16 +241,31 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
         >
           <Feather name="arrow-left" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.title}>Categories</Text>
+
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>Categories</Text>
+          {categories.length > 0 && (
+            <View style={styles.countBadge}>
+              <Text style={styles.countText}>{categories.length}</Text>
+            </View>
+          )}
+        </View>
+
         <TouchableOpacity
-          style={styles.addButton}
+          style={styles.addBtn}
           onPress={() => navigation.navigate("AddCategory")}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
         >
-          <Feather name="plus" size={16} color={Colors.white} />
-          <Text style={styles.addText}>Add</Text>
+          <Feather name="plus" size={18} color={Colors.primary} />
         </TouchableOpacity>
       </View>
+
+      {/* Subtitle */}
+      {categories.length > 0 && (
+        <Text style={styles.subtitle}>
+          Tap a category colour to identify expenses
+        </Text>
+      )}
 
       {/* Error */}
       {categoriesError ? (
@@ -158,24 +275,38 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       ) : null}
 
-      {/* List */}
+      {/* Content */}
       {categoriesLoading && categories.length === 0 ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator color={Colors.primary} size="small" />
         </View>
+      ) : categories.length === 0 ? (
+        <EmptyState onAdd={() => navigation.navigate("AddCategory")} />
       ) : (
-        <View style={styles.listCard}>
-          <FlatList
-            data={categories}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <CategoryRow item={item} onDelete={handleDelete} />
-            )}
-            ListEmptyComponent={renderEmpty}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={categories.length > 8}
-          />
-        </View>
+        <FlatList
+          data={categories}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          renderItem={({ item }) => (
+            <CategoryCard item={item} onDelete={handleDelete} />
+          )}
+          contentContainerStyle={[
+            styles.grid,
+            { paddingBottom: insets.bottom + 100 },
+          ]}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+
+      {/* FAB */}
+      {categories.length > 0 && (
+        <TouchableOpacity
+          style={[styles.fab, { bottom: insets.bottom + 24 }]}
+          onPress={() => navigation.navigate("AddCategory")}
+          activeOpacity={0.85}
+        >
+          <Feather name="plus" size={22} color={Colors.white} />
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -189,29 +320,59 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.sm,
   },
-  backBtn: { marginRight: Spacing.md },
-  title: {
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.surfaceElevated,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titleBlock: {
     flex: 1,
-    fontSize: FontSize.xl,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginLeft: Spacing.xs,
+  },
+  title: {
+    fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
   },
-  addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.primary,
-    paddingVertical: 7,
-    paddingHorizontal: Spacing.md,
+  countBadge: {
+    backgroundColor: Colors.surfaceElevated,
     borderRadius: Radius.full,
-    gap: Spacing.xs,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.surfaceBorder,
   },
-  addText: {
-    color: Colors.white,
-    fontSize: FontSize.sm,
+  countText: {
+    fontSize: FontSize.xs,
     fontWeight: FontWeight.semibold,
+    color: Colors.textSecondary,
+  },
+  addBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: `${Colors.primary}18`,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: `${Colors.primary}40`,
+  },
+
+  subtitle: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    paddingHorizontal: Spacing.lg + Spacing.xs + 36 + Spacing.sm,
+    marginBottom: Spacing.md,
+    letterSpacing: 0.2,
   },
 
   errorBanner: {
@@ -228,38 +389,26 @@ const styles = StyleSheet.create({
 
   loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  listCard: {
-    flex: 1,
-    marginHorizontal: Spacing.lg,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.surfaceBorder,
-    overflow: "hidden",
+  grid: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.xs,
   },
 
-  emptyContainer: {
-    paddingVertical: Spacing.xxxl,
-    alignItems: "center",
-  },
-  emptyIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.surfaceElevated,
+  fab: {
+    position: "absolute",
+    right: Spacing.lg,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.md,
-  },
-  emptyTitle: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.xs,
-  },
-  emptySubtitle: {
-    fontSize: FontSize.sm,
-    color: Colors.textMuted,
-    textAlign: "center",
+    elevation: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
   },
 });
+
+// ─── Categories Screen ─────────────────────────────────────────────────────────

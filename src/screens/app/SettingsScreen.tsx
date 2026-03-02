@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,8 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  Alert,
 } from "react-native";
+import { ConfirmModal } from "../../components/ConfirmModal";
 import { Feather } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -78,20 +78,28 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const signOut = useAuthStore((s) => s.signOut);
   const isLoading = useAuthStore((s) => s.isLoading);
 
-  const handleSignOut = () => {
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign Out",
-        style: "destructive",
-        onPress: () => signOut(),
-      },
-    ]);
-  };
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+
+  const handleSignOut = () => setShowSignOutModal(true);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+
+      <ConfirmModal
+        visible={showSignOutModal}
+        title="Sign Out"
+        message="You will be returned to the login screen."
+        confirmLabel="Sign Out"
+        cancelLabel="Stay"
+        icon="log-out"
+        variant="warning"
+        onConfirm={() => {
+          setShowSignOutModal(false);
+          signOut();
+        }}
+        onCancel={() => setShowSignOutModal(false)}
+      />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
