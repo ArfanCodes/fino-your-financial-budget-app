@@ -26,7 +26,7 @@ export const RootNavigator: React.FC = () => {
   // This prevents the flicker where auth screens flash before
   // the app realizes the user is already logged in.
   if (!isInitialized) {
-    return <ScreenLoader message="Loading FinTrack..." />;
+    return <ScreenLoader message="Loading FINO..." />;
   }
 
   return (

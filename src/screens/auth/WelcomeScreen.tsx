@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  Image,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Colors,
   Spacing,
@@ -28,7 +29,6 @@ const { height } = Dimensions.get("window");
 
 // ─── Welcome Screen ────────────────────────────────────────────────────────────
 export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
-  const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
 
@@ -48,19 +48,8 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
   }, []);
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingTop: insets.top + Spacing.lg,
-          paddingBottom: insets.bottom + Spacing.lg,
-        },
-      ]}
-    >
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
-
-      {/* Subtle top accent line */}
-      <View style={styles.accentLine} />
 
       <Animated.View
         style={[
@@ -68,30 +57,19 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
           { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
         ]}
       >
-        {/* Logo mark */}
+        {/* Logo */}
         <View style={styles.logoBlock}>
-          <View style={styles.logoMark}>
-            <View style={styles.logoInner} />
-          </View>
-          <Text style={styles.logoText}>FinTrack</Text>
+          <Image
+            source={require("../../../assets/logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.logoText}>FINO</Text>
         </View>
 
         {/* Hero */}
         <View style={styles.heroBlock}>
           <Text style={styles.headline}>Your money,{"\n"}under control.</Text>
-          <Text style={styles.subline}>
-            Track expenses, manage budgets, and understand your spending — all
-            in one place.
-          </Text>
-        </View>
-
-        {/* Feature pills */}
-        <View style={styles.pillRow}>
-          {["Expenses", "Categories", "Budgets"].map((label) => (
-            <View key={label} style={styles.pill}>
-              <Text style={styles.pillText}>{label}</Text>
-            </View>
-          ))}
         </View>
       </Animated.View>
 
@@ -112,8 +90,10 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
         >
           <Text style={styles.secondaryBtnText}>Sign In</Text>
         </TouchableOpacity>
+
+        <Text style={styles.credit}>made by Arfan</Text>
       </Animated.View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -124,17 +104,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xxl,
-    paddingBottom: Spacing.xxl,
-  },
-
-  accentLine: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: Colors.primary,
   },
 
   content: {
@@ -148,20 +117,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xxxl,
     gap: Spacing.sm,
   },
-  logoMark: {
-    width: 32,
-    height: 32,
+  logoImage: {
+    width: 36,
+    height: 36,
     borderRadius: 8,
-    backgroundColor: Colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoInner: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 2.5,
-    borderColor: Colors.white,
   },
   logoText: {
     fontSize: FontSize.xl,
@@ -179,35 +138,11 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     letterSpacing: -1.2,
     lineHeight: 46,
-    marginBottom: Spacing.md,
-  },
-  subline: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-    lineHeight: 24,
-  },
-
-  pillRow: {
-    flexDirection: "row",
-    gap: Spacing.sm,
-  },
-  pill: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.surfaceElevated,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.surfaceBorder,
-  },
-  pillText: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
-    letterSpacing: 0.3,
   },
 
   cta: {
     gap: Spacing.sm,
+    paddingBottom: Spacing.lg,
   },
   primaryBtn: {
     backgroundColor: Colors.primary,
@@ -232,5 +167,13 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: FontWeight.medium,
     color: Colors.textSecondary,
+  },
+  credit: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginTop: Spacing.lg,
+    fontWeight: FontWeight.medium,
+    letterSpacing: 0.5,
   },
 });

@@ -12,7 +12,9 @@ import {
   StatusBar,
   TextInput,
 } from "react-native";
-import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -44,13 +46,14 @@ type Props = {
 };
 
 // ─── Payment Method Options ────────────────────────────────────────────────────
-const PAYMENT_METHODS: { label: string; value: PaymentMethod; icon: string }[] = [
-  { label: "Cash", value: "cash", icon: "dollar-sign" },
-  { label: "Card", value: "card", icon: "credit-card" },
-  { label: "UPI", value: "upi", icon: "smartphone" },
-  { label: "Bank Transfer", value: "bank_transfer", icon: "repeat" },
-  { label: "Other", value: "other", icon: "more-horizontal" },
-];
+const PAYMENT_METHODS: { label: string; value: PaymentMethod; icon: string }[] =
+  [
+    { label: "Cash", value: "cash", icon: "dollar-sign" },
+    { label: "Card", value: "card", icon: "credit-card" },
+    { label: "UPI", value: "upi", icon: "smartphone" },
+    { label: "Bank Transfer", value: "bank_transfer", icon: "repeat" },
+    { label: "Other", value: "other", icon: "more-horizontal" },
+  ];
 
 // ─── Add Expense Screen ────────────────────────────────────────────────────────
 export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
@@ -91,7 +94,7 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
     // Split integer and decimal parts
     const [intPart, decPart] = raw.split(".");
     const formatted = new Intl.NumberFormat("en-IN").format(
-      parseInt(intPart || "0", 10)
+      parseInt(intPart || "0", 10),
     );
     return decPart !== undefined ? `${formatted}.${decPart}` : formatted;
   }, []);
@@ -145,7 +148,10 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
           disabled={isSubmitting}
-          style={({ pressed }) => [styles.backButton, { opacity: pressed ? 0.5 : 1 }]}
+          style={({ pressed }) => [
+            styles.backButton,
+            { opacity: pressed ? 0.5 : 1 },
+          ]}
         >
           <Feather name="arrow-left" size={20} color={Colors.textPrimary} />
         </Pressable>
@@ -170,7 +176,10 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
             <View style={styles.amountRow}>
               <Text style={styles.currencySymbol}>₹</Text>
               <TextInput
-                style={[styles.amountDisplay, !value && styles.amountPlaceholder]}
+                style={[
+                  styles.amountDisplay,
+                  !value && styles.amountPlaceholder,
+                ]}
                 placeholder="0.00"
                 placeholderTextColor={Colors.textMuted}
                 keyboardType="decimal-pad"
@@ -212,7 +221,9 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
               <Feather name="tag" size={14} color={Colors.primary} />
               <Text style={styles.sectionLabel}>Category</Text>
               {errors.category_id && (
-                <Text style={styles.errorLabel}>{errors.category_id.message}</Text>
+                <Text style={styles.errorLabel}>
+                  {errors.category_id.message}
+                </Text>
               )}
             </View>
 
@@ -223,7 +234,9 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
               render={({ field: { value } }) => (
                 <>
                   {categoriesLoading ? (
-                    <Text style={styles.loadingText}>Loading categories...</Text>
+                    <Text style={styles.loadingText}>
+                      Loading categories...
+                    </Text>
                   ) : categories.length === 0 ? (
                     <TouchableOpacity
                       style={styles.noCategoryBox}
@@ -231,12 +244,20 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                       disabled={isSubmitting}
                     >
                       <View style={styles.noCategoryIconWrap}>
-                        <Feather name="alert-circle" size={16} color={Colors.warning} />
+                        <Feather
+                          name="alert-circle"
+                          size={16}
+                          color={Colors.warning}
+                        />
                       </View>
                       <Text style={styles.noCategoryText}>
                         No categories found. Tap to set up in Settings.
                       </Text>
-                      <Feather name="chevron-right" size={14} color={Colors.warning} />
+                      <Feather
+                        name="chevron-right"
+                        size={14}
+                        color={Colors.warning}
+                      />
                     </TouchableOpacity>
                   ) : (
                     <View style={styles.categoryGrid}>
@@ -270,14 +291,21 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                             <Text
                               style={[
                                 styles.categoryChipText,
-                                isSelected && { color: cat.color, fontWeight: FontWeight.semibold },
+                                isSelected && {
+                                  color: cat.color,
+                                  fontWeight: FontWeight.semibold,
+                                },
                               ]}
                               numberOfLines={1}
                             >
                               {cat.name}
                             </Text>
                             {isSelected && (
-                              <Feather name="check" size={12} color={cat.color} />
+                              <Feather
+                                name="check"
+                                size={12}
+                                color={cat.color}
+                              />
                             )}
                           </TouchableOpacity>
                         );
@@ -293,7 +321,11 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                         activeOpacity={0.75}
                         disabled={isSubmitting}
                       >
-                        <Feather name="plus" size={16} color={Colors.textSecondary} />
+                        <Feather
+                          name="plus"
+                          size={16}
+                          color={Colors.textSecondary}
+                        />
                         <Text style={styles.addCategoryText}>New</Text>
                       </TouchableOpacity>
                     </View>
@@ -326,7 +358,11 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                     activeOpacity={0.75}
                   >
                     <View style={styles.datePickerIconWrap}>
-                      <Feather name="calendar" size={16} color={Colors.primary} />
+                      <Feather
+                        name="calendar"
+                        size={16}
+                        color={Colors.primary}
+                      />
                     </View>
                     <View style={styles.datePickerInfo}>
                       <Text style={styles.datePickerLabel}>Date</Text>
@@ -334,7 +370,11 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                         {value ? displayDate(value) : "Select a date"}
                       </Text>
                     </View>
-                    <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+                    <Feather
+                      name="chevron-right"
+                      size={16}
+                      color={Colors.textMuted}
+                    />
                   </TouchableOpacity>
                   {errors.date && (
                     <Text style={styles.dateError}>{errors.date.message}</Text>
@@ -345,7 +385,10 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                       mode="date"
                       display={Platform.OS === "ios" ? "spinner" : "default"}
                       maximumDate={new Date()}
-                      onChange={(_event: DateTimePickerEvent, selected?: Date) => {
+                      onChange={(
+                        _event: DateTimePickerEvent,
+                        selected?: Date,
+                      ) => {
                         setShowDatePicker(Platform.OS === "ios");
                         if (selected) {
                           const iso = selected.toISOString().split("T")[0];
@@ -369,7 +412,13 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                   onChangeText={onChange}
                   onBlur={onBlur}
                   editable={!isSubmitting}
-                  leftIcon={<Feather name="file-text" size={16} color={Colors.textMuted} />}
+                  leftIcon={
+                    <Feather
+                      name="file-text"
+                      size={16}
+                      color={Colors.textMuted}
+                    />
+                  }
                 />
               )}
             />
@@ -408,7 +457,9 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                           <Feather
                             name={pm.icon as any}
                             size={14}
-                            color={isSelected ? Colors.white : Colors.textSecondary}
+                            color={
+                              isSelected ? Colors.white : Colors.textSecondary
+                            }
                           />
                         </View>
                         <Text

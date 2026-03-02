@@ -53,7 +53,12 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
     watch,
     formState: { errors },
   } = useForm<SignupFormValues>({
-    defaultValues: { email: "", password: "", confirmPassword: "" },
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
     mode: "onBlur",
   });
 
@@ -136,6 +141,33 @@ export const SignupScreen: React.FC<Props> = ({ navigation }) => {
             {error ? (
               <ErrorBanner message={error} onDismiss={clearError} />
             ) : null}
+
+            <Controller
+              control={control}
+              name="username"
+              rules={{
+                required: "Username is required",
+                minLength: { value: 3, message: "At least 3 characters" },
+                maxLength: { value: 20, message: "Max 20 characters" },
+                pattern: {
+                  value: /^[a-zA-Z0-9_]+$/,
+                  message: "Only letters, numbers and underscores",
+                },
+              }}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <InputField
+                  label="Username"
+                  placeholder="Choose a username"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.username?.message}
+                />
+              )}
+            />
 
             <Controller
               control={control}

@@ -81,8 +81,18 @@ const ColorSwatch: React.FC<{
 
   const handlePress = () => {
     Animated.sequence([
-      Animated.spring(scale, { toValue: 0.85, useNativeDriver: true, tension: 250, friction: 10 }),
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 250, friction: 10 }),
+      Animated.spring(scale, {
+        toValue: 0.85,
+        useNativeDriver: true,
+        tension: 250,
+        friction: 10,
+      }),
+      Animated.spring(scale, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 250,
+        friction: 10,
+      }),
     ]).start();
     onPress();
   };
@@ -93,7 +103,10 @@ const ColorSwatch: React.FC<{
         style={[
           swatchStyles.swatch,
           { backgroundColor: color },
-          selected && [swatchStyles.selected, { borderColor: color, shadowColor: color }],
+          selected && [
+            swatchStyles.selected,
+            { borderColor: color, shadowColor: color },
+          ],
         ]}
         onPress={handlePress}
         activeOpacity={0.85}
@@ -149,8 +162,18 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
   const handleColorSelect = (color: string) => {
     setSelectedColor(color);
     Animated.sequence([
-      Animated.spring(previewScale, { toValue: 1.06, useNativeDriver: true, tension: 200, friction: 8 }),
-      Animated.spring(previewScale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 8 }),
+      Animated.spring(previewScale, {
+        toValue: 1.06,
+        useNativeDriver: true,
+        tension: 200,
+        friction: 8,
+      }),
+      Animated.spring(previewScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 200,
+        friction: 8,
+      }),
     ]).start();
   };
 
@@ -193,7 +216,10 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
               : navigation.goBack()
           }
           hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-          style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.5 : 1 }]}
+          style={({ pressed }) => [
+            styles.backBtn,
+            { opacity: pressed ? 0.5 : 1 },
+          ]}
         >
           <Feather name="arrow-left" size={20} color={Colors.textPrimary} />
         </Pressable>
@@ -224,10 +250,22 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
             ]}
           >
             {/* Colored top accent */}
-            <View style={[styles.previewAccent, { backgroundColor: selectedColor }]} />
+            <View
+              style={[styles.previewAccent, { backgroundColor: selectedColor }]}
+            />
             <View style={styles.previewBody}>
-              <View style={[styles.previewIconBubble, { backgroundColor: `${selectedColor}25` }]}>
-                <View style={[styles.previewIconDot, { backgroundColor: selectedColor }]} />
+              <View
+                style={[
+                  styles.previewIconBubble,
+                  { backgroundColor: `${selectedColor}25` },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.previewIconDot,
+                    { backgroundColor: selectedColor },
+                  ]}
+                />
               </View>
               <View style={styles.previewInfo}>
                 <Text style={styles.previewName} numberOfLines={1}>
@@ -237,8 +275,20 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
                   {COLOR_NAMES[selectedColor] ?? selectedColor}
                 </Text>
               </View>
-              <View style={[styles.previewBadge, { backgroundColor: `${selectedColor}20`, borderColor: `${selectedColor}40` }]}>
-                <Text style={[styles.previewBadgeText, { color: selectedColor }]}>PREVIEW</Text>
+              <View
+                style={[
+                  styles.previewBadge,
+                  {
+                    backgroundColor: `${selectedColor}20`,
+                    borderColor: `${selectedColor}40`,
+                  },
+                ]}
+              >
+                <Text
+                  style={[styles.previewBadgeText, { color: selectedColor }]}
+                >
+                  PREVIEW
+                </Text>
               </View>
             </View>
           </Animated.View>
@@ -277,9 +327,24 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
             <View style={styles.sectionHeader}>
               <Feather name="droplet" size={13} color={Colors.primary} />
               <Text style={styles.sectionLabel}>COLOUR</Text>
-              <View style={[styles.selectedColorBadge, { backgroundColor: `${selectedColor}20`, borderColor: `${selectedColor}40` }]}>
-                <View style={[styles.selectedColorDot, { backgroundColor: selectedColor }]} />
-                <Text style={[styles.selectedColorName, { color: selectedColor }]}>
+              <View
+                style={[
+                  styles.selectedColorBadge,
+                  {
+                    backgroundColor: `${selectedColor}20`,
+                    borderColor: `${selectedColor}40`,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.selectedColorDot,
+                    { backgroundColor: selectedColor },
+                  ]}
+                />
+                <Text
+                  style={[styles.selectedColorName, { color: selectedColor }]}
+                >
                   {COLOR_NAMES[selectedColor] ?? selectedColor}
                 </Text>
               </View>

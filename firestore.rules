@@ -31,5 +31,12 @@ service cloud.firestore {
       allow create:        if isAuth() && isWritingAsOwner();
       allow update:        if isAuth() && isOwner() && isWritingAsOwner();
     }
+
+    // ── Users (profile data) ────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read:   if isAuth() && request.auth.uid == userId;
+      allow create: if isAuth() && request.auth.uid == userId;
+      allow update: if isAuth() && request.auth.uid == userId;
+    }
   }
 }

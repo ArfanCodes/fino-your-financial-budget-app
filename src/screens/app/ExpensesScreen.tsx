@@ -56,7 +56,9 @@ const ExpenseRow: React.FC<{
   return (
     <View style={rowStyles.container}>
       {/* Category color icon */}
-      <View style={[rowStyles.iconWrap, { backgroundColor: `${categoryColor}22` }]}>
+      <View
+        style={[rowStyles.iconWrap, { backgroundColor: `${categoryColor}22` }]}
+      >
         <View style={[rowStyles.iconDot, { backgroundColor: categoryColor }]} />
       </View>
 
@@ -74,7 +76,11 @@ const ExpenseRow: React.FC<{
           <Feather name="calendar" size={10} color={Colors.textMuted} />
           <Text style={rowStyles.meta}>{formatDate(item.date, true)}</Text>
           <View style={rowStyles.metaDivider} />
-          <Feather name={paymentIcon as any} size={10} color={Colors.textMuted} />
+          <Feather
+            name={paymentIcon as any}
+            size={10}
+            color={Colors.textMuted}
+          />
           <Text style={rowStyles.meta}>{paymentLabel}</Text>
         </View>
       </View>
@@ -236,7 +242,9 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={styles.emptyTitle}>No transactions yet</Text>
         <Text style={styles.emptySubtitle}>
           Tap{" "}
-          <Text style={{ color: Colors.primary, fontWeight: FontWeight.semibold }}>
+          <Text
+            style={{ color: Colors.primary, fontWeight: FontWeight.semibold }}
+          >
             + Add
           </Text>{" "}
           to record your first expense
@@ -265,7 +273,8 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.title}>Transactions</Text>
           {expenses.length > 0 && (
             <Text style={styles.totalLabel}>
-              {expenses.length} expense{expenses.length !== 1 ? "s" : ""} · {formatCurrency(totalAmount)} total
+              {expenses.length} expense{expenses.length !== 1 ? "s" : ""} ·{" "}
+              {formatCurrency(totalAmount)} total
             </Text>
           )}
         </View>

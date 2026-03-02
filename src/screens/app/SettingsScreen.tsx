@@ -13,7 +13,6 @@ import { Feather } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "../../store/auth.store";
-import { useFinanceStore } from "../../store/finance.store";
 import {
   Colors,
   Spacing,
@@ -214,8 +213,8 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   const email = user?.email ?? "";
-  const displayName = email.split("@")[0] ?? "User";
-  const initials = getInitials(email);
+  const displayName = user?.username || email.split("@")[0] || "User";
+  const initials = getInitials(user?.username || email);
 
   return (
     <View style={styles.container}>
@@ -470,7 +469,6 @@ const styles = StyleSheet.create({
   profileEmail: {
     fontSize: FontSize.sm,
     color: Colors.textMuted,
-    marginBottom: Spacing.lg,
   },
 
   version: {

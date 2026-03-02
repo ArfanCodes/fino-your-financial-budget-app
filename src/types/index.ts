@@ -2,6 +2,7 @@
 export interface User {
   id: string;
   email: string;
+  username: string;
   created_at: string;
 }
 
@@ -12,6 +13,7 @@ export interface LoginFormValues {
 }
 
 export interface SignupFormValues {
+  username: string;
   email: string;
   password: string;
   confirmPassword: string;

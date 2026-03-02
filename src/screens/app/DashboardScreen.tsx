@@ -491,33 +491,23 @@ const SpendingBarItem: React.FC<SpendingBarItemProps> = ({
   isToday,
   index,
 }) => {
-  const heightAnim = useRef(new Animated.Value(0)).current;
   const pct = maxAmount > 0 ? amount / maxAmount : 0;
-
-  React.useEffect(() => {
-    Animated.timing(heightAnim, {
-      toValue: pct,
-      duration: 520,
-      delay: index * 55 + 100,
-      useNativeDriver: false,
-    }).start();
-  }, [pct]);
+  const barH = Math.max(amount > 0 ? pct * BAR_MAX_H : 0, amount > 0 ? 4 : 2);
 
   return (
     <View style={sgStyles.col}>
       <View style={sgStyles.barTrack}>
-        <Animated.View
-          style={[
-            sgStyles.barFill,
-            {
-              height: heightAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [amount > 0 ? 3 : 2, BAR_MAX_H],
-              }),
-              backgroundColor: isToday ? Colors.primary : `${Colors.primary}55`,
-              opacity: amount > 0 ? 1 : 0.25,
-            },
-          ]}
+        <View
+          style={{
+            width: "100%",
+            height: barH,
+            borderRadius: 5,
+            backgroundColor: isToday
+              ? Colors.primary
+              : amount > 0
+                ? `${Colors.primary}66`
+                : `${Colors.primary}20`,
+          }}
         />
       </View>
       <Text style={[sgStyles.barLabel, isToday && sgStyles.barLabelToday]}>
@@ -546,39 +536,31 @@ const sgStyles = StyleSheet.create({
     gap: 5,
   },
   title: {
-    fontSize: 10,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textMuted,
-    letterSpacing: 1,
-    textTransform: "uppercase",
+    color: Colors.textPrimary,
+    letterSpacing: -0.2,
   },
   sub: {
-    fontSize: 10,
+    fontSize: FontSize.sm,
     color: Colors.textMuted,
+    fontWeight: FontWeight.medium,
   },
   chart: {
     flexDirection: "row",
     alignItems: "flex-end",
-    height: BAR_MAX_H + 18,
     gap: 5,
   },
   col: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "flex-end",
-    height: BAR_MAX_H + 18,
-    gap: 5,
+    gap: 4,
   },
   barTrack: {
-    flex: 1,
     width: "100%",
+    height: BAR_MAX_H,
     justifyContent: "flex-end",
-    alignItems: "center",
-  },
-  barFill: {
-    width: "100%",
     borderRadius: 5,
-    minHeight: 2,
   },
   barLabel: {
     fontSize: 10,
@@ -650,11 +632,19 @@ export const DashboardScreen: React.FC = () => {
     const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const toLocalDateStr = (date: Date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+
     const days = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(today);
       d.setDate(today.getDate() - (6 - i));
       return {
-        dateStr: d.toISOString().slice(0, 10),
+        dateStr: toLocalDateStr(d),
         label: DAY_LABELS[d.getDay()],
         isToday: i === 6,
         amount: 0,
@@ -715,9 +705,8 @@ export const DashboardScreen: React.FC = () => {
   );
 
   const displayName = useMemo(() => {
-    const email = user?.email ?? "";
-    return email.split("@")[0] ?? "there";
-  }, [user?.email]);
+    return user?.username || user?.email?.split("@")[0] || "there";
+  }, [user?.username, user?.email]);
 
   const navigateToAddExpense = useCallback(() => {
     (navigation as any).navigate("TransactionsTab", { screen: "AddExpense" });
@@ -750,7 +739,7 @@ export const DashboardScreen: React.FC = () => {
         {/* ── Top Bar ─────────────────────────────────────────────────── */}
         <View style={styles.topBar}>
           <View style={styles.greetingBlock}>
-            <Text style={styles.greetingSmall}>{greeting} 👋</Text>
+            <Text style={styles.greetingSmall}>{greeting}</Text>
             <Text style={styles.greetingName} numberOfLines={1}>
               {displayName}
             </Text>
@@ -813,7 +802,7 @@ export const DashboardScreen: React.FC = () => {
           <View style={sgStyles.wrapper}>
             <View style={sgStyles.header}>
               <View style={sgStyles.titleRow}>
-                <Feather name="bar-chart-2" size={11} color={Colors.primary} />
+                <Feather name="bar-chart-2" size={15} color={Colors.primary} />
                 <Text style={sgStyles.title}>7-Day Spending</Text>
               </View>
               <Text style={sgStyles.sub}>Last 7 days</Text>
@@ -866,34 +855,11 @@ export const DashboardScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* ── Top Categories ───────────────────────────────────────────── */}
-        {topCategories.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleRow}>
-                <Feather name="pie-chart" size={13} color={Colors.primary} />
-                <Text style={styles.sectionTitle}>TOP CATEGORIES</Text>
-              </View>
-              <Text style={styles.sectionSub}>This month</Text>
-            </View>
-            {topCategories.map((cat, i) => (
-              <CategoryBar
-                key={cat.id}
-                name={cat.name}
-                color={cat.color}
-                amount={cat.amount}
-                total={monthTotal}
-                index={i}
-              />
-            ))}
-          </View>
-        )}
-
         {/* ── Recent Section Header ─────────────────────────────────────── */}
         <View style={styles.recentHeader}>
           <View style={styles.sectionTitleRow}>
-            <Feather name="clock" size={13} color={Colors.primary} />
-            <Text style={styles.sectionTitle}>RECENT TRANSACTIONS</Text>
+            <Feather name="clock" size={15} color={Colors.primary} />
+            <Text style={styles.sectionTitle}>Recent Transactions</Text>
           </View>
           <TouchableOpacity
             onPress={() => (navigation as any).navigate("TransactionsTab")}
@@ -916,10 +882,41 @@ export const DashboardScreen: React.FC = () => {
       diffPct,
       expenses.length,
       categories.length,
-      topCategories,
       weeklyData,
       navigateToAddExpense,
     ],
+  );
+
+  // ── List footer: Top Categories ─────────────────────────────────────────
+  const listFooter = useMemo(
+    () =>
+      topCategories.length > 0 ? (
+        <View
+          style={[
+            styles.section,
+            { marginHorizontal: H_PAD, marginTop: Spacing.md },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Feather name="pie-chart" size={15} color={Colors.primary} />
+              <Text style={styles.sectionTitle}>Top Categories</Text>
+            </View>
+            <Text style={styles.sectionSub}>This month</Text>
+          </View>
+          {topCategories.map((cat, i) => (
+            <CategoryBar
+              key={cat.id}
+              name={cat.name}
+              color={cat.color}
+              amount={cat.amount}
+              total={monthTotal}
+              index={i}
+            />
+          ))}
+        </View>
+      ) : null,
+    [topCategories, monthTotal],
   );
 
   const fabBottom = insets.bottom + 16;
@@ -933,6 +930,7 @@ export const DashboardScreen: React.FC = () => {
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
         ListEmptyComponent={<EmptyTransactions onAdd={navigateToAddExpense} />}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
@@ -987,8 +985,8 @@ const styles = StyleSheet.create({
     marginRight: Spacing.md,
   },
   greetingSmall: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
+    fontSize: FontSize.md,
+    color: Colors.textSecondary,
     marginBottom: 3,
     letterSpacing: 0.2,
   },
@@ -1136,15 +1134,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textMuted,
-    letterSpacing: 1,
-    textTransform: "uppercase",
+    color: Colors.textPrimary,
+    letterSpacing: -0.2,
   },
   sectionSub: {
-    fontSize: FontSize.xs,
+    fontSize: FontSize.sm,
     color: Colors.textMuted,
+    fontWeight: FontWeight.medium,
   },
 
   // ── Recent Header ─────────────────────────────────────────────────────────────

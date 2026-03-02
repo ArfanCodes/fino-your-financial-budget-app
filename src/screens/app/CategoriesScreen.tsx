@@ -109,8 +109,18 @@ const CategoryCard: React.FC<{
 
         {/* Bottom row */}
         <View style={cardStyles.bottomRow}>
-          <View style={[cardStyles.colorPill, { backgroundColor: `${item.color}20`, borderColor: `${item.color}50` }]}>
-            <View style={[cardStyles.colorPillDot, { backgroundColor: item.color }]} />
+          <View
+            style={[
+              cardStyles.colorPill,
+              {
+                backgroundColor: `${item.color}20`,
+                borderColor: `${item.color}50`,
+              },
+            ]}
+          >
+            <View
+              style={[cardStyles.colorPillDot, { backgroundColor: item.color }]}
+            />
             <Text style={[cardStyles.colorPillText, { color: item.color }]}>
               {item.color.toUpperCase()}
             </Text>
@@ -222,9 +232,17 @@ const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => {
   React.useEffect(() => {
     const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.08, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
-      ])
+        Animated.timing(pulse, {
+          toValue: 1.08,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+      ]),
     );
     anim.start();
     return () => anim.stop();
@@ -232,7 +250,9 @@ const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => {
 
   return (
     <View style={emptyStyles.container}>
-      <Animated.View style={[emptyStyles.iconRing, { transform: [{ scale: pulse }] }]}>
+      <Animated.View
+        style={[emptyStyles.iconRing, { transform: [{ scale: pulse }] }]}
+      >
         <View style={emptyStyles.iconInner}>
           <Feather name="tag" size={28} color={Colors.primary} />
         </View>
