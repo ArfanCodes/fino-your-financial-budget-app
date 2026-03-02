@@ -17,6 +17,8 @@
   <img src="https://img.shields.io/badge/Status-Work_In_Progress-FF6F00?style=for-the-badge" />
 </p>
 
+> **WARNING:** This project is proprietary software. No copying, redistribution, modification, or publishing is permitted without written permission. Violators are subject to legal action under the Indian Copyright Act, 1957 and the IT Act, 2000, with penalties up to INR 5,00,000. Read the full [LICENSE](LICENSE) before accessing this repository.
+
 > **Note:** FINO is actively under development. Core features like expense tracking, categories, and budgets are fully functional with a live Firebase backend. Additional features such as notifications, biometrics, data export, and analytics are on the roadmap and coming soon.
 
 ---
