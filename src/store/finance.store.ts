@@ -2,21 +2,25 @@ import { create } from "zustand";
 import { auth } from "../services/firebase";
 import { categoryService } from "../services/category.service";
 import { expenseService } from "../services/expense.service";
-import type { Category, Expense } from "../types";
+import { budgetService } from "../services/budget.service";
+import type { Category, Expense, Budget } from "../types";
 
 // ─── State Shape ───────────────────────────────────────────────────────────────
 interface FinanceStore {
   // ── Data
   categories: Category[];
   expenses: Expense[];
+  budgets: Budget[];
 
   // ── Loading flags (granular to avoid blocking unrelated UI)
   categoriesLoading: boolean;
   expensesLoading: boolean;
+  budgetsLoading: boolean;
 
   // ── Error
   categoriesError: string | null;
   expensesError: string | null;
+  budgetsError: string | null;
 
   // ── Actions: Categories
   fetchCategories: (force?: boolean) => Promise<void>;
@@ -34,6 +38,15 @@ interface FinanceStore {
   }) => Promise<string | null>;
   removeExpense: (id: string) => Promise<string | null>;
 
+  // ── Actions: Budgets
+  fetchBudgets: (month: string, force?: boolean) => Promise<void>;
+  upsertBudget: (
+    categoryId: string | null,
+    monthlyLimit: number,
+    month: string
+  ) => Promise<string | null>;
+  removeBudget: (id: string) => Promise<string | null>;
+
   // ── Utility
   clearFinanceErrors: () => void;
   resetFinance: () => void;
@@ -44,10 +57,13 @@ export const useFinanceStore = create<FinanceStore>((set, get) => ({
   // ── Initial State
   categories: [],
   expenses: [],
+  budgets: [],
   categoriesLoading: false,
   expensesLoading: false,
+  budgetsLoading: false,
   categoriesError: null,
   expensesError: null,
+  budgetsError: null,
 
   // ────────────────────────────────────────────────────────────────
   // CATEGORIES
@@ -170,20 +186,104 @@ export const useFinanceStore = create<FinanceStore>((set, get) => ({
   },
 
   // ────────────────────────────────────────────────────────────────
+  // BUDGETS
+  // ────────────────────────────────────────────────────────────────
+
+  fetchBudgets: async (month: string, force = false) => {
+    // Skip if already loaded for this month (same month string = same data)
+    const existing = get().budgets;
+    if (!force && existing.length > 0 && existing[0]?.month === month) return;
+    set({ budgetsLoading: true, budgetsError: null });
+    const { data, error } = await budgetService.fetchBudgets(month);
+    set({ budgets: data, budgetsLoading: false, budgetsError: error });
+  },
+
+  upsertBudget: async (
+    categoryId: string | null,
+    monthlyLimit: number,
+    month: string
+  ) => {
+    const user = auth.currentUser;
+    if (!user) return "Not authenticated";
+
+    // Optimistic: add/update in local state immediately
+    set((state) => {
+      const existingIdx = state.budgets.findIndex(
+        (b) => b.category_id === categoryId && b.month === month
+      );
+      if (existingIdx >= 0) {
+        const updated = [...state.budgets];
+        updated[existingIdx] = {
+          ...updated[existingIdx],
+          monthly_limit: monthlyLimit,
+        };
+        return { budgets: updated };
+      }
+      // New optimistic budget with temp id
+      const optimistic: Budget = {
+        id: `__opt_${Date.now()}`,
+        user_id: user.uid,
+        category_id: categoryId,
+        monthly_limit: monthlyLimit,
+        month,
+      };
+      return { budgets: [...state.budgets, optimistic] };
+    });
+
+    const { data, error } = await budgetService.createOrUpdateBudget(
+      categoryId,
+      monthlyLimit,
+      month
+    );
+
+    if (error) {
+      // Rollback optimistic on failure
+      await budgetService.fetchBudgets(month).then(({ data: fresh }) => {
+        if (fresh) set({ budgets: fresh });
+      });
+      return error;
+    }
+
+    // Swap optimistic with real ID from Firestore
+    if (data) {
+      set((state) => ({
+        budgets: state.budgets.map((b) =>
+          b.category_id === categoryId && b.month === month ? data : b
+        ),
+      }));
+    }
+
+    return null;
+  },
+
+  removeBudget: async (id: string) => {
+    const error = await budgetService.deleteBudget(id);
+    if (error) return error;
+    set((state) => ({
+      budgets: state.budgets.filter((b) => b.id !== id),
+    }));
+    return null;
+  },
+
+  // ────────────────────────────────────────────────────────────────
   // UTILITY
   // ────────────────────────────────────────────────────────────────
 
-  clearFinanceErrors: () => set({ categoriesError: null, expensesError: null }),
+  clearFinanceErrors: () =>
+    set({ categoriesError: null, expensesError: null, budgetsError: null }),
 
   // Called on sign out so next user gets a clean slate
   resetFinance: () =>
     set({
       categories: [],
       expenses: [],
+      budgets: [],
       categoriesLoading: false,
       expensesLoading: false,
+      budgetsLoading: false,
       categoriesError: null,
       expensesError: null,
+      budgetsError: null,
     }),
 }));
 
@@ -202,6 +302,12 @@ export const selectCategoriesLoading = (
 export const selectExpensesLoading = (
   s: ReturnType<typeof useFinanceStore.getState>,
 ) => s.expensesLoading;
+export const selectBudgets = (
+  s: ReturnType<typeof useFinanceStore.getState>,
+) => s.budgets;
+export const selectBudgetsLoading = (
+  s: ReturnType<typeof useFinanceStore.getState>,
+) => s.budgetsLoading;
 
 /** Returns total spent this month from local expense state (no extra DB call) */
 export const selectCurrentMonthTotal = (

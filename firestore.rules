@@ -9,13 +9,24 @@ service cloud.firestore {
     }
 
     // ── Helper: caller owns the document (existing doc) ──────────────────────
+    // Used by expenses & categories (snake_case user_id field)
     function isOwner() {
       return request.auth.uid == resource.data.user_id;
     }
 
     // ── Helper: caller owns the document being written (new doc) ────────────
+    // Used by expenses & categories (snake_case user_id field)
     function isWritingAsOwner() {
       return request.auth.uid == request.resource.data.user_id;
+    }
+
+    // ── Budget helpers (camelCase userId field) ───────────────────────────────
+    function isBudgetOwner() {
+      return request.auth.uid == resource.data.userId;
+    }
+
+    function isWritingBudgetAsOwner() {
+      return request.auth.uid == request.resource.data.userId;
     }
 
     // ── Expenses ─────────────────────────────────────────────────────────────
@@ -30,6 +41,13 @@ service cloud.firestore {
       allow read,  delete: if isAuth() && isOwner();
       allow create:        if isAuth() && isWritingAsOwner();
       allow update:        if isAuth() && isOwner() && isWritingAsOwner();
+    }
+
+    // ── Budgets ──────────────────────────────────────────────────────────────
+    match /budgets/{budgetId} {
+      allow read,  delete: if isAuth() && isBudgetOwner();
+      allow create:        if isAuth() && isWritingBudgetAsOwner();
+      allow update:        if isAuth() && isBudgetOwner() && isWritingBudgetAsOwner();
     }
 
     // ── Users (profile data) ────────────────────────────────────────────────

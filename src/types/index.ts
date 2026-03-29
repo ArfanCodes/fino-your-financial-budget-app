@@ -45,6 +45,7 @@ export type AuthStackParamList = {
 export type AppStackParamList = {
   MainTabs: undefined;
   Settings: undefined;
+  Recovery: undefined;
 };
 
 export type RootStackParamList = {
@@ -113,6 +114,14 @@ export interface Expense {
 export interface Budget {
   id: string;
   user_id: string;
+  /** null → "total" monthly budget; non-null → per-category budget */
   category_id: string | null;
   monthly_limit: number;
+  /** YYYY-MM format, e.g. "2026-03" */
+  month: string;
+}
+
+export interface BudgetFormValues {
+  monthly_limit: string;
+  category_id: string | null;
 }

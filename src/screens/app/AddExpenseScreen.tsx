@@ -21,6 +21,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect, CommonActions } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFinanceStore } from "../../store/finance.store";
+import { useBudgetStatus } from "../../hooks/useBudgetStatus";
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/InputField";
 import {
@@ -65,6 +66,9 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Budget emergency detection — reads from existing store, no extra fetch
+  const { state: budgetState } = useBudgetStatus();
 
   const {
     control,
@@ -120,6 +124,23 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
 
   const onSubmit = async (values: AddExpenseFormValues) => {
     if (isSubmitting) return;
+
+    // Non-blocking guidance when budget has already been exceeded.
+    // We use a ref-style flag so Cancel truly aborts without setting isSubmitting.
+    if (budgetState === "emergency") {
+      const proceed = await new Promise<boolean>((resolve) => {
+        Alert.alert(
+          "Budget Exceeded",
+          "This will increase your budget deficit. Continue anyway?",
+          [
+            { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+            { text: "Continue", style: "destructive", onPress: () => resolve(true) },
+          ]
+        );
+      });
+      if (!proceed) return; // User cancelled — keep form open
+    }
+
     setIsSubmitting(true);
 
     const error = await addExpense({

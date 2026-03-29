@@ -8,6 +8,7 @@ import { DashboardScreen } from "../screens/app/DashboardScreen";
 import { ExpensesNavigator } from "./ExpensesNavigator";
 import { BudgetNavigator } from "./BudgetNavigator";
 import { SettingsNavigator } from "./SettingsNavigator";
+import { RecoveryScreen } from "../screens/app/RecoveryScreen";
 import type { TabParamList, AppStackParamList } from "../types";
 import {
   Colors,
@@ -113,7 +114,7 @@ const MainTabs: React.FC = () => {
   );
 };
 
-// ─── App Navigator (Stack: tabs + Settings modal) ─────────────────────────────
+// ─── App Navigator (Stack: tabs + Settings modal + Recovery) ─────────────────
 export const AppNavigator: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -123,6 +124,14 @@ export const AppNavigator: React.FC = () => (
       options={{
         presentation: "modal",
         animation: "slide_from_bottom",
+        contentStyle: { backgroundColor: Colors.background },
+      }}
+    />
+    <Stack.Screen
+      name="Recovery"
+      component={RecoveryScreen}
+      options={{
+        animation: "slide_from_right",
         contentStyle: { backgroundColor: Colors.background },
       }}
     />

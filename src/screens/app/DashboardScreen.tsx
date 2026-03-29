@@ -33,6 +33,8 @@ import {
   TAB_BAR_HEIGHT,
 } from "../../utils/constants";
 import { formatCurrency, formatDate, getInitials } from "../../utils/helpers";
+import { BudgetAlertBanner } from "../../components/BudgetAlertBanner";
+import { useBudgetStatus } from "../../hooks/useBudgetStatus";
 import type { Expense, AppStackParamList } from "../../types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -712,6 +714,13 @@ export const DashboardScreen: React.FC = () => {
     (navigation as any).navigate("TransactionsTab", { screen: "AddExpense" });
   }, [navigation]);
 
+  const navigateToRecovery = useCallback(() => {
+    navigation.navigate("Recovery");
+  }, [navigation]);
+
+  // ── Budget alert state (memoized, no extra fetch) ─────────────────────────
+  const budgetStatus = useBudgetStatus();
+
   const totalRows = recentExpenses.length;
   const renderItem = useCallback<ListRenderItem<Expense>>(
     ({ item, index }) => {
@@ -855,6 +864,16 @@ export const DashboardScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* ── Budget Alert Banner ──────────────────────────────────────────── */}
+        {budgetStatus.state !== "safe" && (
+          <BudgetAlertBanner
+            state={budgetStatus.state}
+            overBudgetAmount={budgetStatus.overBudgetAmount}
+            remainingBudget={budgetStatus.remainingBudget}
+            onPress={navigateToRecovery}
+          />
+        )}
+
         {/* ── Recent Section Header ─────────────────────────────────────── */}
         <View style={styles.recentHeader}>
           <View style={styles.sectionTitleRow}>
@@ -884,6 +903,10 @@ export const DashboardScreen: React.FC = () => {
       categories.length,
       weeklyData,
       navigateToAddExpense,
+      navigateToRecovery,
+      budgetStatus.state,
+      budgetStatus.overBudgetAmount,
+      budgetStatus.remainingBudget,
     ],
   );
 
