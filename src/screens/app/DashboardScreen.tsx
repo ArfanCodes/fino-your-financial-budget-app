@@ -35,6 +35,7 @@ import {
 import { formatCurrency, formatDate, getInitials } from "../../utils/helpers";
 import { BudgetAlertBanner } from "../../components/BudgetAlertBanner";
 import { useBudgetStatus } from "../../hooks/useBudgetStatus";
+import { useEmergencyMode } from "../../context/EmergencyModeContext";
 import type { Expense, AppStackParamList } from "../../types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -144,7 +145,7 @@ const rowStyles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: H_PAD,
     backgroundColor: Colors.surface,
     borderLeftWidth: StyleSheet.hairlineWidth,
@@ -167,62 +168,64 @@ const rowStyles = StyleSheet.create({
     borderBottomColor: "rgba(51,65,85,0.5)",
   },
   catBubble: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
   catDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
   info: {
     flex: 1,
-    gap: 4,
+    gap: 5,
   },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   name: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.md,
     color: Colors.textPrimary,
     fontWeight: FontWeight.semibold,
+    letterSpacing: -0.1,
   },
   date: {
-    fontSize: 11,
+    fontSize: FontSize.xs,
     color: Colors.textMuted,
   },
   metaDot: {
-    fontSize: 11,
+    fontSize: FontSize.xs,
     color: Colors.textMuted,
     marginHorizontal: 4,
   },
   note: {
-    fontSize: 11,
+    fontSize: FontSize.xs,
     color: Colors.textMuted,
     flex: 1,
   },
   amountCol: {
     alignItems: "flex-end",
-    gap: 4,
+    gap: 5,
     flexShrink: 0,
   },
   amount: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
+    letterSpacing: -0.2,
   },
   methodBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: Radius.full,
   },
   methodText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: FontWeight.semibold,
     color: Colors.primaryLight,
     letterSpacing: 0.3,
@@ -721,6 +724,14 @@ export const DashboardScreen: React.FC = () => {
   // ── Budget alert state (memoized, no extra fetch) ─────────────────────────
   const budgetStatus = useBudgetStatus();
 
+  // ── Emergency mode ──────────────────────────────────────────────
+  const { enterEmergencyMode, isEmergencyModeActive } = useEmergencyMode();
+
+  const handleEnterEmergency = useCallback(() => {
+    enterEmergencyMode();
+    navigation.navigate("Recovery");
+  }, [enterEmergencyMode, navigation]);
+
   const totalRows = recentExpenses.length;
   const renderItem = useCallback<ListRenderItem<Expense>>(
     ({ item, index }) => {
@@ -765,8 +776,9 @@ export const DashboardScreen: React.FC = () => {
 
         {/* ── Hero Spending Card ───────────────────────────────────────── */}
         <View style={styles.heroCard}>
-          {/* Decorative orb */}
+          {/* Decorative orbs */}
           <View style={styles.heroOrb} />
+          <View style={styles.heroOrb2} />
 
           <Text style={styles.heroLabel}>
             {monthName.toUpperCase()} {year} · TOTAL SPENT
@@ -874,6 +886,39 @@ export const DashboardScreen: React.FC = () => {
           />
         )}
 
+        {/* ── Enter Emergency Mode Button ────────────────────────────────────── */}
+        {budgetStatus.state !== "safe" && !isEmergencyModeActive && (
+          <TouchableOpacity
+            style={styles.emergencyModeBtn}
+            onPress={handleEnterEmergency}
+            activeOpacity={0.8}
+          >
+            <View style={styles.emergencyModeBtnLeft}>
+              <View style={styles.emergencyModeIconWrap}>
+                <Feather name="zap" size={16} color={Colors.danger} />
+              </View>
+              <View>
+                <Text style={styles.emergencyModePrimary}>Enter Emergency Mode</Text>
+                <Text style={styles.emergencyModeSub}>Lock focus on financial recovery</Text>
+              </View>
+            </View>
+            <Feather name="chevron-right" size={16} color={Colors.danger} />
+          </TouchableOpacity>
+        )}
+
+        {/* Active emergency mode indicator on dashboard */}
+        {isEmergencyModeActive && (
+          <TouchableOpacity
+            style={styles.emergencyActiveBtn}
+            onPress={navigateToRecovery}
+            activeOpacity={0.8}
+          >
+            <Feather name="zap" size={14} color={Colors.danger} />
+            <Text style={styles.emergencyActiveTxt}>Emergency Mode Active · Tap to view plan</Text>
+            <Feather name="chevron-right" size={14} color={Colors.danger} />
+          </TouchableOpacity>
+        )}
+
         {/* ── Recent Section Header ─────────────────────────────────────── */}
         <View style={styles.recentHeader}>
           <View style={styles.sectionTitleRow}>
@@ -904,9 +949,11 @@ export const DashboardScreen: React.FC = () => {
       weeklyData,
       navigateToAddExpense,
       navigateToRecovery,
+      handleEnterEmergency,
       budgetStatus.state,
       budgetStatus.overBudgetAmount,
       budgetStatus.remainingBudget,
+      isEmergencyModeActive,
     ],
   );
 
@@ -1021,24 +1068,24 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: Colors.primaryDark,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: Colors.primary,
-    elevation: 4,
+    elevation: 8,
     shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.55,
+    shadowRadius: 10,
   },
   avatarText: {
     color: Colors.white,
     fontWeight: FontWeight.bold,
-    fontSize: FontSize.sm,
+    fontSize: FontSize.md,
     letterSpacing: 0.5,
   },
 
@@ -1060,25 +1107,34 @@ const styles = StyleSheet.create({
   },
   heroOrb: {
     position: "absolute",
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: `${Colors.primary}0D`,
-    top: -60,
-    right: -40,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: `${Colors.primary}12`,
+    top: -80,
+    right: -60,
+  },
+  heroOrb2: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: `${Colors.accent}0A`,
+    bottom: -30,
+    left: -20,
   },
   heroLabel: {
-    fontSize: 10,
+    fontSize: FontSize.xs,
     color: Colors.textMuted,
     fontWeight: FontWeight.bold,
     letterSpacing: 1.4,
     marginBottom: Spacing.xs,
   },
   heroAmount: {
-    fontSize: 38,
+    fontSize: 44,
     fontWeight: FontWeight.extrabold,
     color: Colors.textPrimary,
-    letterSpacing: -1.5,
+    letterSpacing: -2,
     marginBottom: Spacing.sm,
   },
   diffRow: {
@@ -1102,30 +1158,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingTop: Spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.surfaceBorder,
-    marginTop: Spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: `${Colors.surfaceBorder}80`,
+    marginTop: Spacing.sm,
   },
   heroStatItem: {
     flex: 1,
     alignItems: "center",
-    gap: 3,
+    gap: 4,
   },
   heroStatDivider: {
     width: StyleSheet.hairlineWidth,
-    height: 32,
+    height: 36,
     backgroundColor: Colors.surfaceBorder,
   },
   heroStatValue: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
+    letterSpacing: -0.3,
   },
   heroStatLabel: {
-    fontSize: 10,
+    fontSize: FontSize.xs,
     color: Colors.textMuted,
     fontWeight: FontWeight.medium,
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
     textTransform: "uppercase",
   },
 
@@ -1197,4 +1254,66 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.45,
     shadowRadius: 14,
   },
+
+  // ── Emergency Mode Button ──────────────────────────────────────────────────
+  emergencyModeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: `${Colors.danger}0D`,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    borderColor: `${Colors.danger}40`,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  emergencyModeBtnLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    flex: 1,
+  },
+  emergencyModeIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: `${Colors.danger}18`,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  emergencyModePrimary: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+    color: Colors.danger,
+    letterSpacing: -0.1,
+  },
+  emergencyModeSub: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    marginTop: 1,
+  },
+
+  // ── Emergency Active Indicator ────────────────────────────────────────────
+  emergencyActiveBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    backgroundColor: `${Colors.danger}12`,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    borderColor: `${Colors.danger}50`,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  emergencyActiveTxt: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    color: Colors.danger,
+    flex: 1,
+    letterSpacing: -0.1,
+  },
 });
+
