@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   RefreshControl,
   StatusBar,
+  Animated,
 } from "react-native";
 import { ConfirmModal } from "../../components/ConfirmModal";
 import { Feather } from "@expo/vector-icons";
@@ -34,13 +35,13 @@ type Props = {
   >;
 };
 
-// ─── Payment icon map ───────────────────────────────────────────────────────────
-const PAYMENT_ICONS: Record<string, string> = {
-  cash: "dollar-sign",
-  card: "credit-card",
-  upi: "smartphone",
-  bank_transfer: "repeat",
-  other: "more-horizontal",
+// ─── Payment config ─────────────────────────────────────────────────────────────
+const PAYMENT_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
+  cash:          { icon: "dollar-sign",   label: "Cash",     color: "#22c55e" },
+  card:          { icon: "credit-card",   label: "Card",     color: "#818cf8" },
+  upi:           { icon: "smartphone",    label: "UPI",      color: "#f97316" },
+  bank_transfer: { icon: "repeat",        label: "Bank",     color: "#38bdf8" },
+  other:         { icon: "more-horizontal", label: "Other",  color: Colors.textMuted },
 };
 
 // ─── Expense Row ───────────────────────────────────────────────────────────────
@@ -49,128 +50,171 @@ const ExpenseRow: React.FC<{
   categoryName: string;
   categoryColor: string;
   onDelete: (id: string) => void;
-}> = React.memo(({ item, categoryName, categoryColor, onDelete }) => {
-  const paymentIcon = PAYMENT_ICONS[item.payment_method] ?? "circle";
-  const paymentLabel = item.payment_method.replace(/_/g, " ");
+  index: number;
+}> = React.memo(({ item, categoryName, categoryColor, onDelete, index }) => {
+  const pm = PAYMENT_CONFIG[item.payment_method] ?? PAYMENT_CONFIG.other;
+
+  const opacity   = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(18)).current;
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity,    { toValue: 1, duration: 280, delay: index * 45, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: 280, delay: index * 45, useNativeDriver: true }),
+    ]).start();
+  }, []);
 
   return (
-    <View style={rowStyles.container}>
-      {/* Category color icon */}
-      <View
-        style={[rowStyles.iconWrap, { backgroundColor: `${categoryColor}22` }]}
-      >
-        <View style={[rowStyles.iconDot, { backgroundColor: categoryColor }]} />
-      </View>
+    <Animated.View style={{ opacity, transform: [{ translateY }] }}>
+      <View style={rowStyles.card}>
+        {/* Left color accent bar */}
+        <View style={[rowStyles.accentBar, { backgroundColor: categoryColor }]} />
 
-      {/* Info */}
-      <View style={rowStyles.info}>
-        <Text style={rowStyles.category} numberOfLines={1}>
-          {categoryName}
-        </Text>
-        {item.note ? (
-          <Text style={rowStyles.note} numberOfLines={1}>
-            {item.note}
-          </Text>
-        ) : null}
-        <View style={rowStyles.metaRow}>
-          <Feather name="calendar" size={10} color={Colors.textMuted} />
-          <Text style={rowStyles.meta}>{formatDate(item.date, true)}</Text>
-          <View style={rowStyles.metaDivider} />
-          <Feather
-            name={paymentIcon as any}
-            size={10}
-            color={Colors.textMuted}
-          />
-          <Text style={rowStyles.meta}>{paymentLabel}</Text>
+        {/* Category icon bubble */}
+        <View style={[rowStyles.iconWrap, { backgroundColor: `${categoryColor}20` }]}>
+          <View style={[rowStyles.iconDot, { backgroundColor: categoryColor }]} />
+        </View>
+
+        {/* Text info */}
+        <View style={rowStyles.info}>
+          <Text style={rowStyles.category} numberOfLines={1}>{categoryName}</Text>
+          {item.note ? (
+            <Text style={rowStyles.note} numberOfLines={1}>{item.note}</Text>
+          ) : null}
+          <View style={rowStyles.metaRow}>
+            <Text style={rowStyles.date}>{formatDate(item.date, true)}</Text>
+            <View style={rowStyles.dot} />
+            {/* Payment pill */}
+            <View style={[rowStyles.pill, { backgroundColor: `${pm.color}18`, borderColor: `${pm.color}40` }]}>
+              <Feather name={pm.icon as any} size={9} color={pm.color} />
+              <Text style={[rowStyles.pillText, { color: pm.color }]}>{pm.label}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Amount + delete */}
+        <View style={rowStyles.right}>
+          <Text style={rowStyles.amount}>−{formatCurrency(item.amount)}</Text>
+          <TouchableOpacity
+            onPress={() => onDelete(item.id)}
+            hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+            style={rowStyles.deleteBtn}
+          >
+            <Feather name="trash-2" size={12} color={Colors.textMuted} />
+          </TouchableOpacity>
         </View>
       </View>
-
-      {/* Amount + delete */}
-      <View style={rowStyles.right}>
-        <Text style={rowStyles.amount}>-{formatCurrency(item.amount)}</Text>
-        <TouchableOpacity
-          onPress={() => onDelete(item.id)}
-          hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
-          style={rowStyles.deleteBtn}
-        >
-          <Feather name="trash-2" size={13} color={Colors.textMuted} />
-        </TouchableOpacity>
-      </View>
-    </View>
+    </Animated.View>
   );
 });
 
+ExpenseRow.displayName = "ExpenseRow";
+
 const rowStyles = StyleSheet.create({
-  container: {
+  card: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    marginBottom: Spacing.sm,
+    borderRadius: Radius.xl,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
     paddingHorizontal: Spacing.md,
-    paddingVertical: 13,
-    gap: Spacing.md,
+    paddingVertical: 14,
+    gap: Spacing.sm,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+  },
+  accentBar: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3.5,
+    borderTopLeftRadius: Radius.xl,
+    borderBottomLeftRadius: Radius.xl,
   },
   iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+    marginLeft: 6,
   },
   iconDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
   info: {
     flex: 1,
-    gap: 3,
+    gap: 4,
   },
   category: {
     fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
+    letterSpacing: -0.1,
   },
   note: {
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
+    fontWeight: FontWeight.medium,
   },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
   },
-  meta: {
+  date: {
     fontSize: FontSize.xs,
     color: Colors.textMuted,
-    textTransform: "capitalize",
   },
-  metaDivider: {
+  dot: {
     width: 3,
     height: 3,
     borderRadius: 2,
     backgroundColor: Colors.surfaceBorder,
-    marginHorizontal: 2,
+  },
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+  },
+  pillText: {
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
   },
   right: {
     alignItems: "flex-end",
-    gap: 8,
+    gap: 10,
     flexShrink: 0,
   },
   amount: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
     color: Colors.danger,
+    letterSpacing: -0.3,
   },
   deleteBtn: {
     width: 28,
     height: 28,
     borderRadius: 8,
     backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -179,13 +223,13 @@ const rowStyles = StyleSheet.create({
 // ─── Expenses Screen ───────────────────────────────────────────────────────────
 export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const expenses = useFinanceStore((s) => s.expenses);
-  const categories = useFinanceStore((s) => s.categories);
+  const expenses        = useFinanceStore((s) => s.expenses);
+  const categories      = useFinanceStore((s) => s.categories);
   const expensesLoading = useFinanceStore((s) => s.expensesLoading);
-  const expensesError = useFinanceStore((s) => s.expensesError);
-  const fetchExpenses = useFinanceStore((s) => s.fetchExpenses);
+  const expensesError   = useFinanceStore((s) => s.expensesError);
+  const fetchExpenses   = useFinanceStore((s) => s.fetchExpenses);
   const fetchCategories = useFinanceStore((s) => s.fetchCategories);
-  const removeExpense = useFinanceStore((s) => s.removeExpense);
+  const removeExpense   = useFinanceStore((s) => s.removeExpense);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -195,11 +239,20 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
     return map;
   }, [categories]);
 
-  // Aggregate total for header
+  // Month total
   const totalAmount = React.useMemo(
     () => expenses.reduce((sum, e) => sum + e.amount, 0),
     [expenses],
   );
+
+  // This-month count
+  const thisMonthCount = React.useMemo(() => {
+    const now = new Date();
+    return expenses.filter((e) => {
+      const d = new Date(e.date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+  }, [expenses]);
 
   useFocusEffect(
     useCallback(() => {
@@ -208,7 +261,7 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
     }, []),
   );
 
-  const handleDelete = (id: string) => setDeleteId(id);
+  const handleDelete  = (id: string) => setDeleteId(id);
 
   const confirmDelete = async () => {
     if (!deleteId) return;
@@ -218,7 +271,7 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const renderItem = useCallback(
-    ({ item }: { item: Expense }) => {
+    ({ item, index }: { item: Expense; index: number }) => {
       const cat = categoryMap.get(item.category_id);
       return (
         <ExpenseRow
@@ -226,6 +279,7 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
           categoryName={cat?.name ?? "Uncategorized"}
           categoryColor={cat?.color ?? Colors.surfaceBorder}
           onDelete={handleDelete}
+          index={index}
         />
       );
     },
@@ -242,9 +296,7 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={styles.emptyTitle}>No transactions yet</Text>
         <Text style={styles.emptySubtitle}>
           Tap{" "}
-          <Text
-            style={{ color: Colors.primary, fontWeight: FontWeight.semibold }}
-          >
+          <Text style={{ color: Colors.primary, fontWeight: FontWeight.semibold }}>
             + Add
           </Text>{" "}
           to record your first expense
@@ -267,14 +319,13 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
         onCancel={() => setDeleteId(null)}
       />
 
-      {/* Header */}
+      {/* ── Header ──────────────────────────────────────────────────────── */}
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
         <View>
           <Text style={styles.title}>Transactions</Text>
           {expenses.length > 0 && (
             <Text style={styles.totalLabel}>
-              {expenses.length} expense{expenses.length !== 1 ? "s" : ""} ·{" "}
-              {formatCurrency(totalAmount)} total
+              {expenses.length} total · {thisMonthCount} this month
             </Text>
           )}
         </View>
@@ -297,7 +348,31 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Error */}
+      {/* ── Summary strip ──────────────────────────────────────────────── */}
+      {expenses.length > 0 && (
+        <View style={styles.summaryStrip}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryValue}>{formatCurrency(totalAmount)}</Text>
+            <Text style={styles.summaryLabel}>Total Spent</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryValue}>
+              {expenses.length > 0
+                ? formatCurrency(totalAmount / expenses.length)
+                : "—"}
+            </Text>
+            <Text style={styles.summaryLabel}>Avg. per Txn</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryValue}>{thisMonthCount}</Text>
+            <Text style={styles.summaryLabel}>This Month</Text>
+          </View>
+        </View>
+      )}
+
+      {/* ── Error ───────────────────────────────────────────────────────── */}
       {expensesError ? (
         <View style={styles.errorBanner}>
           <Feather name="alert-circle" size={14} color={Colors.danger} />
@@ -305,7 +380,7 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       ) : null}
 
-      {/* Loading or list */}
+      {/* ── List ────────────────────────────────────────────────────────── */}
       {expensesLoading && expenses.length === 0 ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator color={Colors.primary} size="large" />
@@ -319,7 +394,7 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
           ListEmptyComponent={renderEmpty}
           contentContainerStyle={[
             styles.listContent,
-            { paddingBottom: insets.bottom + Spacing.xxl },
+            { paddingBottom: insets.bottom + Spacing.xxl + 80 },
           ]}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -344,18 +419,19 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
+  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.sm,
   },
   title: {
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
-    letterSpacing: 0.1,
+    letterSpacing: -0.5,
   },
   totalLabel: {
     fontSize: FontSize.sm,
@@ -369,9 +445,9 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
@@ -382,17 +458,60 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.primary,
-    paddingVertical: 8,
+    paddingVertical: 9,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.full,
     gap: Spacing.xs,
+    elevation: 4,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
   },
   addText: {
     color: Colors.white,
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.bold,
   },
 
+  // Summary strip
+  summaryStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: 3,
+  },
+  summaryValue: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    letterSpacing: -0.3,
+  },
+  summaryLabel: {
+    fontSize: 10,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.medium,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  summaryDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: Colors.surfaceBorder,
+  },
+
+  // Error
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -405,6 +524,7 @@ const styles = StyleSheet.create({
   },
   errorText: { color: Colors.danger, fontSize: FontSize.sm, flex: 1 },
 
+  // Loader
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
@@ -417,24 +537,25 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.medium,
   },
 
+  // List
   listContent: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.xxl,
+    paddingTop: Spacing.xs,
     flexGrow: 1,
   },
 
+  // Empty
   emptyContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: Spacing.xxxl,
+    paddingTop: 80,
     gap: Spacing.sm,
   },
   emptyIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 72,
+    height: 72,
+    borderRadius: 22,
     backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,

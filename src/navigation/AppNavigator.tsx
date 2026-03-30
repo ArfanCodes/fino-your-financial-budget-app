@@ -9,6 +9,7 @@ import { ExpensesNavigator } from "./ExpensesNavigator";
 import { BudgetNavigator } from "./BudgetNavigator";
 import { SettingsNavigator } from "./SettingsNavigator";
 import { RecoveryScreen } from "../screens/app/RecoveryScreen";
+import { GlobalBudgetBanner } from "../components/GlobalBudgetBanner";
 import type { TabParamList, AppStackParamList } from "../types";
 import {
   Colors,
@@ -65,52 +66,56 @@ const MainTabs: React.FC = () => {
   const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
 
   return (
-    <Tab.Navigator
-      initialRouteName="Overview"
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarStyle: [
-          styles.tabBar,
-          {
-            height: tabBarHeight,
-            paddingBottom:
-              (Platform.OS === "ios" ? Spacing.md : Spacing.sm) + insets.bottom,
-          },
-        ],
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textMuted,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarItemStyle: styles.tabItem,
-        tabBarIcon: ({ color }) => (
-          <Feather
-            name={TAB_ICONS[route.name as keyof TabParamList]}
-            size={20}
-            color={color}
-          />
-        ),
-      })}
-    >
-      <Tab.Screen
-        name="Overview"
-        component={DashboardScreen}
-        options={{ tabBarLabel: "Overview" }}
-      />
-      <Tab.Screen
-        name="TransactionsTab"
-        component={ExpensesNavigator}
-        options={{ tabBarLabel: "Transactions" }}
-      />
-      <Tab.Screen
-        name="BudgetTab"
-        component={BudgetNavigator}
-        options={{ tabBarLabel: "Budget" }}
-      />
-      <Tab.Screen
-        name="Analytics"
-        component={AnalyticsPlaceholder}
-        options={{ tabBarLabel: "Analytics" }}
-      />
-    </Tab.Navigator>
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator
+        initialRouteName="Overview"
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarStyle: [
+            styles.tabBar,
+            {
+              height: tabBarHeight,
+              paddingBottom:
+                (Platform.OS === "ios" ? Spacing.md : Spacing.sm) + insets.bottom,
+            },
+          ],
+          tabBarActiveTintColor: Colors.primary,
+          tabBarInactiveTintColor: Colors.textMuted,
+          tabBarLabelStyle: styles.tabLabel,
+          tabBarItemStyle: styles.tabItem,
+          tabBarIcon: ({ color }) => (
+            <Feather
+              name={TAB_ICONS[route.name as keyof TabParamList]}
+              size={20}
+              color={color}
+            />
+          ),
+        })}
+      >
+        <Tab.Screen
+          name="Overview"
+          component={DashboardScreen}
+          options={{ tabBarLabel: "Overview" }}
+        />
+        <Tab.Screen
+          name="TransactionsTab"
+          component={ExpensesNavigator}
+          options={{ tabBarLabel: "Transactions" }}
+        />
+        <Tab.Screen
+          name="BudgetTab"
+          component={BudgetNavigator}
+          options={{ tabBarLabel: "Budget" }}
+        />
+        <Tab.Screen
+          name="Analytics"
+          component={AnalyticsPlaceholder}
+          options={{ tabBarLabel: "Analytics" }}
+        />
+      </Tab.Navigator>
+      {/* Global budget warning banner — sits above tab bar, visible on all tabs */}
+      <GlobalBudgetBanner />
+    </View>
   );
 };
 

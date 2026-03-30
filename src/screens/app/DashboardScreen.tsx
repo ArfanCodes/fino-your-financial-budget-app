@@ -41,7 +41,141 @@ import type { Expense, AppStackParamList } from "../../types";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const H_PAD = 20;
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// ─── Emergency Mode Card (flashing warning) ────────────────────────────────────
+const EmergencyModeCard: React.FC<{
+  onPress: () => void;
+}> = React.memo(({ onPress }) => {
+  const flashAnim = useRef(new Animated.Value(1)).current;
+
+  React.useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(flashAnim, {
+          toValue: 0.15,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flashAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  return (
+    <TouchableOpacity
+      style={emgStyles.card}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={emgStyles.left}>
+        <Animated.View style={[emgStyles.iconWrap, { opacity: flashAnim }]}>
+          <Feather name="alert-triangle" size={20} color={Colors.danger} />
+        </Animated.View>
+        <View style={emgStyles.textBlock}>
+          <Text style={emgStyles.title}>Enter Emergency Mode</Text>
+          <Text style={emgStyles.sub}>Lock focus on financial recovery</Text>
+        </View>
+      </View>
+      <Feather name="chevron-right" size={18} color={Colors.danger} />
+    </TouchableOpacity>
+  );
+});
+EmergencyModeCard.displayName = "EmergencyModeCard";
+
+const emgStyles = StyleSheet.create({
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: `${Colors.danger}14`,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    borderColor: `${Colors.danger}55`,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
+    marginTop: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  left: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    flex: 1,
+  },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: `${Colors.danger}22`,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  textBlock: {
+    flex: 1,
+    gap: 3,
+  },
+  title: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    color: Colors.danger,
+    letterSpacing: -0.2,
+  },
+  sub: {
+    fontSize: FontSize.sm,
+    color: `${Colors.danger}99`,
+  },
+});
+
+// ─── In-Card Budget Banner Styles ──────────────────────────────────────────────
+const inCardStyles = StyleSheet.create({
+  budgetBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    paddingVertical: 12,
+    paddingHorizontal: Spacing.md,
+    marginTop: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  budgetBannerDanger: {
+    backgroundColor: `${Colors.danger}18`,
+    borderColor: `${Colors.danger}60`,
+  },
+  budgetBannerWarning: {
+    backgroundColor: `${Colors.warning}12`,
+    borderColor: `${Colors.warning}50`,
+  },
+  budgetIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  budgetText: {
+    flex: 1,
+    gap: 3,
+  },
+  budgetTitle: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    letterSpacing: -0.2,
+  },
+  budgetSub: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+  },
+});
+
+
 interface TransactionRowProps {
   item: Expense;
   catName: string;
@@ -97,12 +231,6 @@ const TransactionRow: React.FC<TransactionRowProps> = React.memo(
               {catName}
             </Text>
             <View style={rowStyles.metaRow}>
-              <Feather
-                name="calendar"
-                size={10}
-                color={Colors.textMuted}
-                style={{ marginRight: 3 }}
-              />
               <Text style={rowStyles.date}>{formatDate(item.date, true)}</Text>
               {item.note ? (
                 <>
@@ -119,19 +247,44 @@ const TransactionRow: React.FC<TransactionRowProps> = React.memo(
             <Text style={rowStyles.amount} numberOfLines={1}>
               {formatCurrency(item.amount)}
             </Text>
-            <View
-              style={[
-                rowStyles.methodBadge,
-                { backgroundColor: `${Colors.primary}18` },
-              ]}
-            >
-              <Text style={rowStyles.methodText}>
-                {item.payment_method === "bank_transfer"
+            {(() => {
+              const method = item.payment_method;
+              const label =
+                method === "bank_transfer"
                   ? "Bank"
-                  : item.payment_method.charAt(0).toUpperCase() +
-                    item.payment_method.slice(1)}
-              </Text>
-            </View>
+                  : method === "cash"
+                    ? "Cash"
+                    : method === "card"
+                      ? "Card"
+                      : method === "upi"
+                        ? "UPI"
+                        : method.charAt(0).toUpperCase() + method.slice(1);
+              const accent =
+                method === "cash"
+                  ? "#22c55e"
+                  : method === "card"
+                    ? "#818cf8"
+                    : method === "upi"
+                      ? "#f97316"
+                      : method === "bank_transfer"
+                        ? "#38bdf8"
+                        : Colors.primary;
+              return (
+                <View
+                  style={[
+                    rowStyles.methodBadge,
+                    {
+                      backgroundColor: `${accent}16`,
+                      borderColor: `${accent}40`,
+                    },
+                  ]}
+                >
+                  <Text style={[rowStyles.methodText, { color: accent }]}>
+                    {label}
+                  </Text>
+                </View>
+              );
+            })()}
           </View>
         </View>
       </Animated.View>
@@ -145,8 +298,9 @@ const rowStyles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: H_PAD,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
+    marginHorizontal: H_PAD,
     backgroundColor: Colors.surface,
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderRightWidth: StyleSheet.hairlineWidth,
@@ -157,32 +311,34 @@ const rowStyles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
+    paddingTop: 16,
   },
   rowLast: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomLeftRadius: Radius.xl,
     borderBottomRightRadius: Radius.xl,
+    paddingBottom: 16,
   },
   rowDivider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(51,65,85,0.5)",
+    borderBottomColor: `${Colors.surfaceBorder}70`,
   },
   catBubble: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+    width: 50,
+    height: 50,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
   catDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
   },
   info: {
     flex: 1,
-    gap: 5,
+    gap: 4,
   },
   metaRow: {
     flexDirection: "row",
@@ -193,6 +349,11 @@ const rowStyles = StyleSheet.create({
     color: Colors.textPrimary,
     fontWeight: FontWeight.semibold,
     letterSpacing: -0.1,
+  },
+  expenseName: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.medium,
   },
   date: {
     fontSize: FontSize.xs,
@@ -212,23 +373,26 @@ const rowStyles = StyleSheet.create({
     alignItems: "flex-end",
     gap: 5,
     flexShrink: 0,
+    maxWidth: 110,
   },
   amount: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    color: Colors.danger,
     letterSpacing: -0.2,
   },
   methodBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: Radius.full,
+    borderWidth: 1,
+    alignSelf: "flex-end",
   },
   methodText: {
     fontSize: 10,
-    fontWeight: FontWeight.semibold,
-    color: Colors.primaryLight,
-    letterSpacing: 0.3,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
 });
 
@@ -432,7 +596,7 @@ const catBarStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   dot: {
     width: 10,
@@ -440,27 +604,27 @@ const catBarStyles = StyleSheet.create({
     borderRadius: 5,
     flexShrink: 0,
   },
-  info: { flex: 1, gap: 5 },
+  info: { flex: 1, gap: 6 },
   labelRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   name: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.md,
     color: Colors.textPrimary,
-    fontWeight: FontWeight.medium,
+    fontWeight: FontWeight.semibold,
     flex: 1,
     marginRight: 8,
   },
   amount: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.semibold,
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    fontWeight: FontWeight.bold,
   },
   track: {
-    height: 5,
-    backgroundColor: Colors.surfaceElevated,
+    height: 8,
+    backgroundColor: `${Colors.surfaceBorder}50`,
     borderRadius: Radius.full,
     overflow: "hidden",
   },
@@ -469,10 +633,10 @@ const catBarStyles = StyleSheet.create({
     borderRadius: Radius.full,
   },
   pct: {
-    fontSize: 11,
+    fontSize: FontSize.xs,
     color: Colors.textMuted,
     fontWeight: FontWeight.semibold,
-    width: 34,
+    width: 36,
     textAlign: "right",
     flexShrink: 0,
   },
@@ -590,6 +754,7 @@ export const DashboardScreen: React.FC = () => {
 
   const fetchExpenses = useFinanceStore((s) => s.fetchExpenses);
   const fetchCategories = useFinanceStore((s) => s.fetchCategories);
+  const fetchBudgets = useFinanceStore((s) => s.fetchBudgets);
   const expensesLoading = useFinanceStore((s) => s.expensesLoading);
   const categories = useFinanceStore((s) => s.categories);
   const expenses = useFinanceStore((s) => s.expenses);
@@ -682,9 +847,18 @@ export const DashboardScreen: React.FC = () => {
     return ((monthTotal - lastMonthTotal) / lastMonthTotal) * 100;
   }, [monthTotal, lastMonthTotal]);
 
+  const currentMonthKey = useMemo(() => {
+    const now2 = new Date();
+    return `${now2.getFullYear()}-${String(now2.getMonth() + 1).padStart(2, "0")}`;
+  }, []);
+
   const loadData = useCallback(async () => {
-    await Promise.all([fetchExpenses(), fetchCategories()]);
-  }, [fetchExpenses, fetchCategories]);
+    await Promise.all([
+      fetchExpenses(),
+      fetchCategories(),
+      fetchBudgets(currentMonthKey),
+    ]);
+  }, [fetchExpenses, fetchCategories, fetchBudgets, currentMonthKey]);
 
   useFocusEffect(
     useCallback(() => {
@@ -751,29 +925,15 @@ export const DashboardScreen: React.FC = () => {
   );
 
   // ── List header ────────────────────────────────────────────────────────────
+  // The greeting/avatar topBar is rendered as a fixed View above the FlatList
+  // so it never scrolls behind the status bar. The listHeader starts below it.
+  const fixedHeaderHeight = insets.top + 80; // approx topBar height
+
   const listHeader = useMemo(
     () => (
       <View
-        style={[styles.headerWrapper, { paddingTop: insets.top + Spacing.md }]}
+        style={[styles.headerWrapper, { paddingTop: fixedHeaderHeight + Spacing.sm }]}
       >
-        {/* ── Top Bar ─────────────────────────────────────────────────── */}
-        <View style={styles.topBar}>
-          <View style={styles.greetingBlock}>
-            <Text style={styles.greetingSmall}>{greeting}</Text>
-            <Text style={styles.greetingName} numberOfLines={1}>
-              {displayName}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.avatar}
-            onPress={() => navigation.navigate("Settings")}
-            activeOpacity={0.75}
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          >
-            <Text style={styles.avatarText}>{initials}</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* ── Hero Spending Card ───────────────────────────────────────── */}
         <View style={styles.heroCard}>
           {/* Decorative orbs */}
@@ -784,6 +944,52 @@ export const DashboardScreen: React.FC = () => {
             {monthName.toUpperCase()} {year} · TOTAL SPENT
           </Text>
           <Text style={styles.heroAmount}>{formatCurrency(monthTotal)}</Text>
+
+          {/* ── Inline budget progress (same data as Budget screen) ── */}
+          {budgetStatus.hasBudget && (
+            <View style={styles.heroBudgetRow}>
+              {/* bar */}
+              <View style={styles.heroBudgetTrack}>
+                <View
+                  style={[
+                    styles.heroBudgetFill,
+                    {
+                      width: `${Math.min(budgetStatus.usageRatio * 100, 100)}%`,
+                      backgroundColor:
+                        budgetStatus.state === "emergency"
+                          ? Colors.danger
+                          : budgetStatus.state === "warning"
+                          ? Colors.warning
+                          : Colors.success,
+                    },
+                  ]}
+                />
+              </View>
+              {/* labels */}
+              <View style={styles.heroBudgetLabels}>
+                <Text style={styles.heroBudgetLeft}>
+                  of {formatCurrency(budgetStatus.totalLimit)} budget
+                </Text>
+                <Text
+                  style={[
+                    styles.heroBudgetRight,
+                    {
+                      color:
+                        budgetStatus.state === "emergency"
+                          ? Colors.danger
+                          : budgetStatus.state === "warning"
+                          ? Colors.warning
+                          : Colors.success,
+                    },
+                  ]}
+                >
+                  {budgetStatus.state === "emergency"
+                    ? `${formatCurrency(budgetStatus.overBudgetAmount)} over`
+                    : `${formatCurrency(budgetStatus.remainingBudget)} left`}
+                </Text>
+              </View>
+            </View>
+          )}
 
           {diffPct !== null && (
             <View style={styles.diffRow}>
@@ -817,6 +1023,72 @@ export const DashboardScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
+          )}
+
+          {/* ── Budget Exceeded Banner (inside card) ──────────────── */}
+          {budgetStatus.state !== "safe" && (
+            <TouchableOpacity
+              style={[
+                inCardStyles.budgetBanner,
+                budgetStatus.state === "emergency"
+                  ? inCardStyles.budgetBannerDanger
+                  : inCardStyles.budgetBannerWarning,
+              ]}
+              onPress={navigateToRecovery}
+              activeOpacity={0.8}
+            >
+              <View
+                style={[
+                  inCardStyles.budgetIconWrap,
+                  {
+                    backgroundColor:
+                      budgetStatus.state === "emergency"
+                        ? `${Colors.danger}25`
+                        : `${Colors.warning}25`,
+                  },
+                ]}
+              >
+                <Feather
+                  name={budgetStatus.state === "emergency" ? "alert-triangle" : "alert-circle"}
+                  size={18}
+                  color={budgetStatus.state === "emergency" ? Colors.danger : Colors.warning}
+                />
+              </View>
+              <View style={inCardStyles.budgetText}>
+                <Text
+                  style={[
+                    inCardStyles.budgetTitle,
+                    {
+                      color:
+                        budgetStatus.state === "emergency"
+                          ? Colors.danger
+                          : Colors.warning,
+                    },
+                  ]}
+                >
+                  {budgetStatus.state === "emergency"
+                    ? "⚠ Budget Exceeded"
+                    : "Approaching Budget Limit"}
+                </Text>
+                <Text style={inCardStyles.budgetSub}>
+                  {budgetStatus.state === "emergency"
+                    ? `${formatCurrency(budgetStatus.overBudgetAmount)} over budget — tap to view plan`
+                    : `${formatCurrency(budgetStatus.remainingBudget)} remaining this month`}
+                </Text>
+              </View>
+              <Feather
+                name="chevron-right"
+                size={16}
+                color={
+                  budgetStatus.state === "emergency" ? Colors.danger : Colors.warning
+                }
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* ── Enter Emergency Mode (inside card, above chart) ───── */}
+          {budgetStatus.state !== "safe" && !isEmergencyModeActive && (
+            <EmergencyModeCard onPress={handleEnterEmergency} />
           )}
 
           {/* ── 7-Day Spending Graph ───────────────────────────────── */}
@@ -876,36 +1148,6 @@ export const DashboardScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* ── Budget Alert Banner ──────────────────────────────────────────── */}
-        {budgetStatus.state !== "safe" && (
-          <BudgetAlertBanner
-            state={budgetStatus.state}
-            overBudgetAmount={budgetStatus.overBudgetAmount}
-            remainingBudget={budgetStatus.remainingBudget}
-            onPress={navigateToRecovery}
-          />
-        )}
-
-        {/* ── Enter Emergency Mode Button ────────────────────────────────────── */}
-        {budgetStatus.state !== "safe" && !isEmergencyModeActive && (
-          <TouchableOpacity
-            style={styles.emergencyModeBtn}
-            onPress={handleEnterEmergency}
-            activeOpacity={0.8}
-          >
-            <View style={styles.emergencyModeBtnLeft}>
-              <View style={styles.emergencyModeIconWrap}>
-                <Feather name="zap" size={16} color={Colors.danger} />
-              </View>
-              <View>
-                <Text style={styles.emergencyModePrimary}>Enter Emergency Mode</Text>
-                <Text style={styles.emergencyModeSub}>Lock focus on financial recovery</Text>
-              </View>
-            </View>
-            <Feather name="chevron-right" size={16} color={Colors.danger} />
-          </TouchableOpacity>
-        )}
-
         {/* Active emergency mode indicator on dashboard */}
         {isEmergencyModeActive && (
           <TouchableOpacity
@@ -913,9 +1155,9 @@ export const DashboardScreen: React.FC = () => {
             onPress={navigateToRecovery}
             activeOpacity={0.8}
           >
-            <Feather name="zap" size={14} color={Colors.danger} />
+            <Feather name="zap" size={16} color={Colors.danger} />
             <Text style={styles.emergencyActiveTxt}>Emergency Mode Active · Tap to view plan</Text>
-            <Feather name="chevron-right" size={14} color={Colors.danger} />
+            <Feather name="chevron-right" size={16} color={Colors.danger} />
           </TouchableOpacity>
         )}
 
@@ -936,10 +1178,7 @@ export const DashboardScreen: React.FC = () => {
       </View>
     ),
     [
-      insets.top,
-      greeting,
-      displayName,
-      initials,
+      fixedHeaderHeight,
       monthName,
       year,
       monthTotal,
@@ -995,6 +1234,31 @@ export const DashboardScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
+      {/* ── Fixed header (above scroll, never overlapped) ─────────────── */}
+      <View
+        style={[
+          styles.fixedHeader,
+          { paddingTop: insets.top + Spacing.md },
+        ]}
+      >
+        <View style={styles.topBar}>
+          <View style={styles.greetingBlock}>
+            <Text style={styles.greetingSmall}>{greeting}</Text>
+            <Text style={styles.greetingName} numberOfLines={1}>
+              {displayName}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.avatar}
+            onPress={() => navigation.navigate("Settings")}
+            activeOpacity={0.75}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Text style={styles.avatarText}>{initials}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <FlatList
         data={recentExpenses}
         keyExtractor={keyExtractor}
@@ -1039,6 +1303,18 @@ const styles = StyleSheet.create({
   },
   listContent: {},
 
+  // Fixed header sits above the FlatList, always visible
+  fixedHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: Colors.background,
+    paddingHorizontal: H_PAD,
+    paddingBottom: Spacing.sm,
+  },
+
   headerWrapper: {
     paddingHorizontal: H_PAD,
   },
@@ -1048,23 +1324,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xs,
   },
   greetingBlock: {
     flex: 1,
     marginRight: Spacing.md,
   },
   greetingSmall: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.lg,
     color: Colors.textSecondary,
     marginBottom: 3,
     letterSpacing: 0.2,
   },
   greetingName: {
-    fontSize: FontSize.xl,
+    fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
     textTransform: "capitalize",
   },
   avatar: {
@@ -1135,7 +1411,36 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.extrabold,
     color: Colors.textPrimary,
     letterSpacing: -2,
+    marginBottom: 4,
+  },
+  // ── Inline budget progress bar inside hero card ──────────────────────────
+  heroBudgetRow: {
     marginBottom: Spacing.sm,
+    gap: 6,
+  },
+  heroBudgetTrack: {
+    height: 5,
+    backgroundColor: `${Colors.surfaceBorder}60`,
+    borderRadius: 99,
+    overflow: "hidden",
+  },
+  heroBudgetFill: {
+    height: "100%",
+    borderRadius: 99,
+  },
+  heroBudgetLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  heroBudgetLeft: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.medium,
+  },
+  heroBudgetRight: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
   },
   diffRow: {
     marginBottom: Spacing.md,
@@ -1173,16 +1478,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceBorder,
   },
   heroStatValue: {
-    fontSize: FontSize.lg,
+    fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
     letterSpacing: -0.3,
   },
   heroStatLabel: {
-    fontSize: FontSize.xs,
+    fontSize: FontSize.sm,
     color: Colors.textMuted,
     fontWeight: FontWeight.medium,
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
     textTransform: "uppercase",
   },
 
@@ -1214,10 +1519,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   sectionTitle: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   sectionSub: {
     fontSize: FontSize.sm,
