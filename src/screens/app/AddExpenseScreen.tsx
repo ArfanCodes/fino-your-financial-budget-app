@@ -19,7 +19,10 @@ import { Feather } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect, CommonActions } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useFinanceStore } from "../../store/finance.store";
 import { useBudgetStatus } from "../../hooks/useBudgetStatus";
 import { Button } from "../../components/Button";
@@ -134,8 +137,12 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
           "This will increase your budget deficit. Continue anyway?",
           [
             { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
-            { text: "Continue", style: "destructive", onPress: () => resolve(true) },
-          ]
+            {
+              text: "Continue",
+              style: "destructive",
+              onPress: () => resolve(true),
+            },
+          ],
         );
       });
       if (!proceed) return; // User cancelled — keep form open
@@ -160,11 +167,11 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
+      <View style={styles.header}>
         <Pressable
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
@@ -511,7 +518,7 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
           />
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 };
 

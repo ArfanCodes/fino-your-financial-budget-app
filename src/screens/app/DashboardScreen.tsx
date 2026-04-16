@@ -17,7 +17,10 @@ import {
   useNavigation,
   NavigationProp,
 } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/auth.store";
 import {
@@ -35,6 +38,7 @@ import {
 import { formatCurrency, formatDate, getInitials } from "../../utils/helpers";
 import { BudgetAlertBanner } from "../../components/BudgetAlertBanner";
 import { useBudgetStatus } from "../../hooks/useBudgetStatus";
+import { CategoryChip } from "../../components/CategoryChip";
 import { useEmergencyMode } from "../../context/EmergencyModeContext";
 import type { Expense, AppStackParamList } from "../../types";
 
@@ -60,7 +64,7 @@ const EmergencyModeCard: React.FC<{
           duration: 500,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     loop.start();
     return () => loop.stop();
@@ -175,116 +179,95 @@ const inCardStyles = StyleSheet.create({
   },
 });
 
-
 interface TransactionRowProps {
   item: Expense;
   catName: string;
   catColor: string;
-  isFirst: boolean;
-  isLast: boolean;
   index: number;
 }
 
-// ─── Transaction Row ───────────────────────────────────────────────────────────
+// ─── Transaction Row (card-style, left accent stripe) ──────────────────────────
 const TransactionRow: React.FC<TransactionRowProps> = React.memo(
-  ({ item, catName, catColor, isFirst, isLast, index }) => {
-    const translateX = useRef(new Animated.Value(30)).current;
+  ({ item, catName, catColor, index }) => {
+    const translateY = useRef(new Animated.Value(16)).current;
     const opacity = useRef(new Animated.Value(0)).current;
 
     React.useEffect(() => {
       Animated.parallel([
         Animated.timing(opacity, {
           toValue: 1,
-          duration: 280,
-          delay: index * 55,
+          duration: 300,
+          delay: index * 60,
           useNativeDriver: true,
         }),
-        Animated.spring(translateX, {
+        Animated.spring(translateY, {
           toValue: 0,
-          delay: index * 55,
+          delay: index * 60,
           useNativeDriver: true,
-          tension: 90,
-          friction: 10,
+          tension: 120,
+          friction: 12,
         }),
       ]).start();
     }, []);
 
+    const paymentLabel = getPaymentMethodLabel(item.payment_method);
+    // First letter of category for the square badge
+    const initial = catName.charAt(0).toUpperCase();
+
     return (
-      <Animated.View style={{ opacity, transform: [{ translateX }] }}>
+      <Animated.View
+        style={[
+          rowStyles.card,
+          { opacity, transform: [{ translateY }] },
+        ]}
+      >
+        {/* ── Left accent stripe ── */}
+        <View style={[rowStyles.stripe, { backgroundColor: catColor }]} />
+
+        {/* ── Square letter badge ── */}
         <View
           style={[
-            rowStyles.row,
-            isFirst && rowStyles.rowFirst,
-            isLast && rowStyles.rowLast,
-            !isLast && rowStyles.rowDivider,
+            rowStyles.badge,
+            { backgroundColor: `${catColor}22`, borderColor: `${catColor}40` },
           ]}
         >
-          {/* Category color bubble */}
+          <Text style={[rowStyles.badgeLetter, { color: catColor }]}>
+            {initial}
+          </Text>
+        </View>
+
+        {/* ── Info block ── */}
+        <View style={rowStyles.info}>
+          <Text style={rowStyles.name} numberOfLines={1}>
+            {catName}
+          </Text>
+          <View style={rowStyles.metaRow}>
+            <Text style={rowStyles.date}>{formatDate(item.date, true)}</Text>
+            {item.note ? (
+              <>
+                <Text style={rowStyles.metaDot}>·</Text>
+                <Text style={rowStyles.note} numberOfLines={1}>
+                  {item.note}
+                </Text>
+              </>
+            ) : null}
+          </View>
+        </View>
+
+        {/* ── Right side: amount + method tag ── */}
+        <View style={rowStyles.right}>
+          <Text style={[rowStyles.amount, { color: catColor }]} numberOfLines={1}>
+            {formatCurrency(item.amount)}
+          </Text>
           <View
-            style={[rowStyles.catBubble, { backgroundColor: `${catColor}22` }]}
+            style={[
+              rowStyles.methodTag,
+              { backgroundColor: `${catColor}18`, borderColor: `${catColor}35` },
+            ]}
           >
-            <View style={[rowStyles.catDot, { backgroundColor: catColor }]} />
-          </View>
-
-          <View style={rowStyles.info}>
-            <Text style={rowStyles.name} numberOfLines={1}>
-              {catName}
+            <Text style={[rowStyles.methodText, { color: catColor }]}>
+              {paymentLabel}
             </Text>
-            <View style={rowStyles.metaRow}>
-              <Text style={rowStyles.date}>{formatDate(item.date, true)}</Text>
-              {item.note ? (
-                <>
-                  <Text style={rowStyles.metaDot}>·</Text>
-                  <Text style={rowStyles.note} numberOfLines={1}>
-                    {item.note}
-                  </Text>
-                </>
-              ) : null}
-            </View>
-          </View>
-
-          <View style={rowStyles.amountCol}>
-            <Text style={rowStyles.amount} numberOfLines={1}>
-              {formatCurrency(item.amount)}
-            </Text>
-            {(() => {
-              const method = item.payment_method;
-              const label =
-                method === "bank_transfer"
-                  ? "Bank"
-                  : method === "cash"
-                    ? "Cash"
-                    : method === "card"
-                      ? "Card"
-                      : method === "upi"
-                        ? "UPI"
-                        : method.charAt(0).toUpperCase() + method.slice(1);
-              const accent =
-                method === "cash"
-                  ? "#22c55e"
-                  : method === "card"
-                    ? "#818cf8"
-                    : method === "upi"
-                      ? "#f97316"
-                      : method === "bank_transfer"
-                        ? "#38bdf8"
-                        : Colors.primary;
-              return (
-                <View
-                  style={[
-                    rowStyles.methodBadge,
-                    {
-                      backgroundColor: `${accent}16`,
-                      borderColor: `${accent}40`,
-                    },
-                  ]}
-                >
-                  <Text style={[rowStyles.methodText, { color: accent }]}>
-                    {label}
-                  </Text>
-                </View>
-              );
-            })()}
           </View>
         </View>
       </Animated.View>
@@ -295,106 +278,113 @@ const TransactionRow: React.FC<TransactionRowProps> = React.memo(
 TransactionRow.displayName = "TransactionRow";
 
 const rowStyles = StyleSheet.create({
-  row: {
+  // ── Floating card ──────────────────────────────────────────────────────────
+  card: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: Spacing.md,
     marginHorizontal: H_PAD,
+    marginBottom: 10,
     backgroundColor: Colors.surface,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
     borderColor: Colors.surfaceBorder,
-    gap: Spacing.sm,
+    overflow: "hidden",
+    paddingVertical: 14,
+    paddingRight: Spacing.md,
+    gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  rowFirst: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopLeftRadius: Radius.xl,
-    borderTopRightRadius: Radius.xl,
-    paddingTop: 16,
+
+  // ── Left accent stripe (4 px, full card height via overflow:hidden) ────────
+  stripe: {
+    width: 4,
+    alignSelf: "stretch",
+    borderRadius: 0,
+    flexShrink: 0,
   },
-  rowLast: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomLeftRadius: Radius.xl,
-    borderBottomRightRadius: Radius.xl,
-    paddingBottom: 16,
-  },
-  rowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: `${Colors.surfaceBorder}70`,
-  },
-  catBubble: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
+
+  // ── Category letter square badge ──────────────────────────────────────────
+  badge: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
-  catDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+  badgeLetter: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    letterSpacing: -0.5,
   },
+
+  // ── Text content ──────────────────────────────────────────────────────────
   info: {
     flex: 1,
     gap: 4,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
   },
   name: {
     fontSize: FontSize.md,
     color: Colors.textPrimary,
     fontWeight: FontWeight.semibold,
-    letterSpacing: -0.1,
+    letterSpacing: -0.2,
   },
-  expenseName: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    fontWeight: FontWeight.medium,
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   date: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.medium,
   },
   metaDot: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    marginHorizontal: 4,
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    marginHorizontal: 5,
   },
   note: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
     flex: 1,
   },
-  amountCol: {
+
+  // ── Right side ────────────────────────────────────────────────────────────
+  right: {
     alignItems: "flex-end",
     gap: 5,
     flexShrink: 0,
-    maxWidth: 110,
   },
   amount: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.danger,
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
-  methodBadge: {
+  methodTag: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: Radius.full,
+    borderRadius: 6,
     borderWidth: 1,
-    alignSelf: "flex-end",
   },
   methodText: {
     fontSize: 10,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
+    fontWeight: FontWeight.semibold,
+    letterSpacing: 0.3,
   },
 });
+
+const getPaymentMethodLabel = (method: string): string => {
+  if (method === "bank_transfer") return "Bank";
+  if (method === "cash") return "Cash";
+  if (method === "card") return "Card";
+  if (method === "upi") return "UPI";
+  return method.charAt(0).toUpperCase() + method.slice(1);
+};
 
 // ─── Empty State ───────────────────────────────────────────────────────────────
 const EmptyTransactions: React.FC<{ onAdd: () => void }> = React.memo(
@@ -712,7 +702,7 @@ const sgStyles = StyleSheet.create({
   },
   sub: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
+    color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
   },
   chart: {
@@ -733,7 +723,7 @@ const sgStyles = StyleSheet.create({
   },
   barLabel: {
     fontSize: 10,
-    color: Colors.textMuted,
+    color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
     textAlign: "center",
   },
@@ -906,7 +896,6 @@ export const DashboardScreen: React.FC = () => {
     navigation.navigate("Recovery");
   }, [enterEmergencyMode, navigation]);
 
-  const totalRows = recentExpenses.length;
   const renderItem = useCallback<ListRenderItem<Expense>>(
     ({ item, index }) => {
       const cat = categoryMap.get(item.category_id);
@@ -915,25 +904,17 @@ export const DashboardScreen: React.FC = () => {
           item={item}
           catName={cat?.name ?? "Uncategorized"}
           catColor={cat?.color ?? Colors.surfaceBorder}
-          isFirst={index === 0}
-          isLast={index === totalRows - 1}
           index={index}
         />
       );
     },
-    [categoryMap, totalRows],
+    [categoryMap],
   );
 
   // ── List header ────────────────────────────────────────────────────────────
-  // The greeting/avatar topBar is rendered as a fixed View above the FlatList
-  // so it never scrolls behind the status bar. The listHeader starts below it.
-  const fixedHeaderHeight = insets.top + 80; // approx topBar height
-
   const listHeader = useMemo(
     () => (
-      <View
-        style={[styles.headerWrapper, { paddingTop: fixedHeaderHeight + Spacing.sm }]}
-      >
+      <View style={styles.headerWrapper}>
         {/* ── Hero Spending Card ───────────────────────────────────────── */}
         <View style={styles.heroCard}>
           {/* Decorative orbs */}
@@ -959,8 +940,8 @@ export const DashboardScreen: React.FC = () => {
                         budgetStatus.state === "emergency"
                           ? Colors.danger
                           : budgetStatus.state === "warning"
-                          ? Colors.warning
-                          : Colors.success,
+                            ? Colors.warning
+                            : Colors.success,
                     },
                   ]}
                 />
@@ -978,8 +959,8 @@ export const DashboardScreen: React.FC = () => {
                         budgetStatus.state === "emergency"
                           ? Colors.danger
                           : budgetStatus.state === "warning"
-                          ? Colors.warning
-                          : Colors.success,
+                            ? Colors.warning
+                            : Colors.success,
                     },
                   ]}
                 >
@@ -1049,9 +1030,17 @@ export const DashboardScreen: React.FC = () => {
                 ]}
               >
                 <Feather
-                  name={budgetStatus.state === "emergency" ? "alert-triangle" : "alert-circle"}
+                  name={
+                    budgetStatus.state === "emergency"
+                      ? "alert-triangle"
+                      : "alert-circle"
+                  }
                   size={18}
-                  color={budgetStatus.state === "emergency" ? Colors.danger : Colors.warning}
+                  color={
+                    budgetStatus.state === "emergency"
+                      ? Colors.danger
+                      : Colors.warning
+                  }
                 />
               </View>
               <View style={inCardStyles.budgetText}>
@@ -1080,7 +1069,9 @@ export const DashboardScreen: React.FC = () => {
                 name="chevron-right"
                 size={16}
                 color={
-                  budgetStatus.state === "emergency" ? Colors.danger : Colors.warning
+                  budgetStatus.state === "emergency"
+                    ? Colors.danger
+                    : Colors.warning
                 }
               />
             </TouchableOpacity>
@@ -1156,7 +1147,9 @@ export const DashboardScreen: React.FC = () => {
             activeOpacity={0.8}
           >
             <Feather name="zap" size={16} color={Colors.danger} />
-            <Text style={styles.emergencyActiveTxt}>Emergency Mode Active · Tap to view plan</Text>
+            <Text style={styles.emergencyActiveTxt}>
+              Emergency Mode Active · Tap to view plan
+            </Text>
             <Feather name="chevron-right" size={16} color={Colors.danger} />
           </TouchableOpacity>
         )}
@@ -1178,7 +1171,9 @@ export const DashboardScreen: React.FC = () => {
       </View>
     ),
     [
-      fixedHeaderHeight,
+      greeting,
+      displayName,
+      initials,
       monthName,
       year,
       monthTotal,
@@ -1192,6 +1187,9 @@ export const DashboardScreen: React.FC = () => {
       budgetStatus.state,
       budgetStatus.overBudgetAmount,
       budgetStatus.remainingBudget,
+      budgetStatus.hasBudget,
+      budgetStatus.usageRatio,
+      budgetStatus.totalLimit,
       isEmergencyModeActive,
     ],
   );
@@ -1228,19 +1226,14 @@ export const DashboardScreen: React.FC = () => {
     [topCategories, monthTotal],
   );
 
-  const fabBottom = insets.bottom + 16;
+  // Account for tab bar height + tab bar bottom offset + padding
+  const fabBottom = Math.max(insets.bottom, 16) + TAB_BAR_HEIGHT + 16;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
-      {/* ── Fixed header (above scroll, never overlapped) ─────────────── */}
-      <View
-        style={[
-          styles.fixedHeader,
-          { paddingTop: insets.top + Spacing.md },
-        ]}
-      >
+      <View style={styles.headerShell}>
         <View style={styles.topBar}>
           <View style={styles.greetingBlock}>
             <Text style={styles.greetingSmall}>{greeting}</Text>
@@ -1283,15 +1276,8 @@ export const DashboardScreen: React.FC = () => {
         removeClippedSubviews={Platform.OS === "android"}
       />
 
-      {/* ── FAB ── */}
-      <TouchableOpacity
-        style={[styles.fab, { bottom: fabBottom }]}
-        onPress={navigateToAddExpense}
-        activeOpacity={0.85}
-      >
-        <Feather name="plus" size={24} color={Colors.white} />
-      </TouchableOpacity>
-    </View>
+      />
+    </SafeAreaView>
   );
 };
 
@@ -1303,20 +1289,16 @@ const styles = StyleSheet.create({
   },
   listContent: {},
 
-  // Fixed header sits above the FlatList, always visible
-  fixedHeader: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    backgroundColor: Colors.background,
+  headerShell: {
     paddingHorizontal: H_PAD,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.sm,
+    backgroundColor: Colors.background,
   },
 
   headerWrapper: {
     paddingHorizontal: H_PAD,
+    paddingTop: Spacing.sm,
   },
 
   // ── Top Bar ──────────────────────────────────────────────────────────────────
@@ -1352,11 +1334,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2.5,
     borderColor: Colors.primary,
-    elevation: 8,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.55,
-    shadowRadius: 10,
   },
   avatarText: {
     color: Colors.white,
@@ -1401,7 +1378,7 @@ const styles = StyleSheet.create({
   },
   heroLabel: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
+    color: Colors.textSecondary,
     fontWeight: FontWeight.bold,
     letterSpacing: 1.4,
     marginBottom: Spacing.xs,
@@ -1485,7 +1462,7 @@ const styles = StyleSheet.create({
   },
   heroStatLabel: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
+    color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
     letterSpacing: 0.4,
     textTransform: "uppercase",
@@ -1621,4 +1598,3 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
 });
-

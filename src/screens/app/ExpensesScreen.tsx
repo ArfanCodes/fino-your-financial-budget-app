@@ -12,10 +12,14 @@ import {
   Animated,
 } from "react-native";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { CategoryChip } from "../../components/CategoryChip";
 import { Feather } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useFinanceStore } from "../../store/finance.store";
 import {
   Colors,
@@ -35,13 +39,12 @@ type Props = {
   >;
 };
 
-// ─── Payment config ─────────────────────────────────────────────────────────────
-const PAYMENT_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
-  cash:          { icon: "dollar-sign",   label: "Cash",     color: "#22c55e" },
-  card:          { icon: "credit-card",   label: "Card",     color: "#818cf8" },
-  upi:           { icon: "smartphone",    label: "UPI",      color: "#f97316" },
-  bank_transfer: { icon: "repeat",        label: "Bank",     color: "#38bdf8" },
-  other:         { icon: "more-horizontal", label: "Other",  color: Colors.textMuted },
+const getPaymentMethodLabel = (method: string): string => {
+  if (method === "bank_transfer") return "Bank";
+  if (method === "cash") return "Cash";
+  if (method === "card") return "Card";
+  if (method === "upi") return "UPI";
+  return method.charAt(0).toUpperCase() + method.slice(1);
 };
 
 // ─── Expense Row ───────────────────────────────────────────────────────────────
@@ -52,57 +55,78 @@ const ExpenseRow: React.FC<{
   onDelete: (id: string) => void;
   index: number;
 }> = React.memo(({ item, categoryName, categoryColor, onDelete, index }) => {
-  const pm = PAYMENT_CONFIG[item.payment_method] ?? PAYMENT_CONFIG.other;
-
-  const opacity   = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(18)).current;
+  const translateY = useRef(new Animated.Value(16)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity,    { toValue: 1, duration: 280, delay: index * 45, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 280, delay: index * 45, useNativeDriver: true }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 300,
+        delay: index * 45,
+        useNativeDriver: true,
+      }),
+      Animated.spring(translateY, {
+        toValue: 0,
+        delay: index * 45,
+        useNativeDriver: true,
+        tension: 120,
+        friction: 12,
+      }),
     ]).start();
-  }, []);
+  }, [index, opacity, translateY]);
+
+  const initial = categoryName.charAt(0).toUpperCase();
 
   return (
-    <Animated.View style={{ opacity, transform: [{ translateY }] }}>
-      <View style={rowStyles.card}>
-        {/* Left color accent bar */}
-        <View style={[rowStyles.accentBar, { backgroundColor: categoryColor }]} />
+    <Animated.View style={[rowStyles.card, { opacity, transform: [{ translateY }] }]}>
+      {/* ── Left accent stripe ── */}
+      <View style={[rowStyles.stripe, { backgroundColor: categoryColor }]} />
 
-        {/* Category icon bubble */}
-        <View style={[rowStyles.iconWrap, { backgroundColor: `${categoryColor}20` }]}>
-          <View style={[rowStyles.iconDot, { backgroundColor: categoryColor }]} />
-        </View>
+      {/* ── Category letter square badge ── */}
+      <View
+        style={[
+          rowStyles.badge,
+          { backgroundColor: `${categoryColor}22`, borderColor: `${categoryColor}40` },
+        ]}
+      >
+        <Text style={[rowStyles.badgeLetter, { color: categoryColor }]}>
+          {initial}
+        </Text>
+      </View>
 
-        {/* Text info */}
-        <View style={rowStyles.info}>
-          <Text style={rowStyles.category} numberOfLines={1}>{categoryName}</Text>
-          {item.note ? (
-            <Text style={rowStyles.note} numberOfLines={1}>{item.note}</Text>
-          ) : null}
-          <View style={rowStyles.metaRow}>
-            <Text style={rowStyles.date}>{formatDate(item.date, true)}</Text>
-            <View style={rowStyles.dot} />
-            {/* Payment pill */}
-            <View style={[rowStyles.pill, { backgroundColor: `${pm.color}18`, borderColor: `${pm.color}40` }]}>
-              <Feather name={pm.icon as any} size={9} color={pm.color} />
-              <Text style={[rowStyles.pillText, { color: pm.color }]}>{pm.label}</Text>
-            </View>
-          </View>
+      {/* ── Info block ── */}
+      <View style={rowStyles.info}>
+        <Text style={rowStyles.category} numberOfLines={1}>
+          {categoryName}
+        </Text>
+        <View style={rowStyles.metaRow}>
+          <Text style={rowStyles.date}>{formatDate(item.date, true)}</Text>
+          <Text style={rowStyles.dot}>·</Text>
+          <Text style={rowStyles.method} numberOfLines={1}>
+            {getPaymentMethodLabel(item.payment_method)}
+          </Text>
         </View>
+        {item.note ? (
+          <Text style={rowStyles.note} numberOfLines={1}>
+            {item.note}
+          </Text>
+        ) : null}
+      </View>
 
-        {/* Amount + delete */}
-        <View style={rowStyles.right}>
-          <Text style={rowStyles.amount}>−{formatCurrency(item.amount)}</Text>
-          <TouchableOpacity
-            onPress={() => onDelete(item.id)}
-            hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
-            style={rowStyles.deleteBtn}
-          >
-            <Feather name="trash-2" size={12} color={Colors.textMuted} />
-          </TouchableOpacity>
-        </View>
+      {/* ── Right side: Amount + Delete ── */}
+      <View style={rowStyles.right}>
+        <Text style={[rowStyles.amount, { color: categoryColor }]} numberOfLines={1}>
+          −{formatCurrency(item.amount)}
+        </Text>
+        <TouchableOpacity
+          onPress={() => onDelete(item.id)}
+          hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+          style={rowStyles.deleteBtn}
+          activeOpacity={0.7}
+        >
+          <Feather name="trash-2" size={13} color={Colors.danger} />
+        </TouchableOpacity>
       </View>
     </Animated.View>
   );
@@ -115,42 +139,39 @@ const rowStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
+    borderRadius: Radius.lg,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 14,
-    gap: Spacing.sm,
     overflow: "hidden",
+    paddingVertical: 14,
+    paddingRight: Spacing.md,
+    gap: 12,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.08,
     shadowRadius: 6,
   },
-  accentBar: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 3.5,
-    borderTopLeftRadius: Radius.xl,
-    borderBottomLeftRadius: Radius.xl,
+  stripe: {
+    width: 4,
+    alignSelf: "stretch",
+    borderRadius: 0,
+    flexShrink: 0,
   },
-  iconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+  badge: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    marginLeft: 6,
   },
-  iconDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+  badgeLetter: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    letterSpacing: -0.5,
   },
   info: {
     flex: 1,
@@ -158,63 +179,50 @@ const rowStyles = StyleSheet.create({
   },
   category: {
     fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.semibold,
     color: Colors.textPrimary,
-    letterSpacing: -0.1,
-  },
-  note: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
+    letterSpacing: -0.2,
   },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
   },
   date: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.medium,
   },
   dot: {
-    width: 3,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: Colors.surfaceBorder,
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    marginHorizontal: 5,
   },
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: Radius.full,
-    borderWidth: 1,
+  method: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.medium,
   },
-  pillText: {
-    fontSize: 10,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
+  note: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
   },
   right: {
     alignItems: "flex-end",
-    gap: 10,
+    gap: 8,
     flexShrink: 0,
   },
   amount: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.danger,
     letterSpacing: -0.3,
   },
   deleteBtn: {
-    width: 28,
-    height: 28,
+    width: 26,
+    height: 26,
     borderRadius: 8,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: `${Colors.danger}15`,
     borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
+    borderColor: `${Colors.danger}35`,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -223,13 +231,13 @@ const rowStyles = StyleSheet.create({
 // ─── Expenses Screen ───────────────────────────────────────────────────────────
 export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const expenses        = useFinanceStore((s) => s.expenses);
-  const categories      = useFinanceStore((s) => s.categories);
+  const expenses = useFinanceStore((s) => s.expenses);
+  const categories = useFinanceStore((s) => s.categories);
   const expensesLoading = useFinanceStore((s) => s.expensesLoading);
-  const expensesError   = useFinanceStore((s) => s.expensesError);
-  const fetchExpenses   = useFinanceStore((s) => s.fetchExpenses);
+  const expensesError = useFinanceStore((s) => s.expensesError);
+  const fetchExpenses = useFinanceStore((s) => s.fetchExpenses);
   const fetchCategories = useFinanceStore((s) => s.fetchCategories);
-  const removeExpense   = useFinanceStore((s) => s.removeExpense);
+  const removeExpense = useFinanceStore((s) => s.removeExpense);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -250,7 +258,9 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
     const now = new Date();
     return expenses.filter((e) => {
       const d = new Date(e.date);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      return (
+        d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+      );
     }).length;
   }, [expenses]);
 
@@ -261,7 +271,7 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
     }, []),
   );
 
-  const handleDelete  = (id: string) => setDeleteId(id);
+  const handleDelete = (id: string) => setDeleteId(id);
 
   const confirmDelete = async () => {
     if (!deleteId) return;
@@ -296,7 +306,9 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={styles.emptyTitle}>No transactions yet</Text>
         <Text style={styles.emptySubtitle}>
           Tap{" "}
-          <Text style={{ color: Colors.primary, fontWeight: FontWeight.semibold }}>
+          <Text
+            style={{ color: Colors.primary, fontWeight: FontWeight.semibold }}
+          >
             + Add
           </Text>{" "}
           to record your first expense
@@ -306,7 +318,7 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       <ConfirmModal
@@ -320,7 +332,7 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
       />
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+      <View style={styles.header}>
         <View>
           <Text style={styles.title}>Transactions</Text>
           {expenses.length > 0 && (
@@ -352,7 +364,9 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
       {expenses.length > 0 && (
         <View style={styles.summaryStrip}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryValue}>{formatCurrency(totalAmount)}</Text>
+            <Text style={styles.summaryValue}>
+              {formatCurrency(totalAmount)}
+            </Text>
             <Text style={styles.summaryLabel}>Total Spent</Text>
           </View>
           <View style={styles.summaryDivider} />
@@ -411,7 +425,7 @@ export const ExpensesScreen: React.FC<Props> = ({ navigation }) => {
           initialNumToRender={15}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 

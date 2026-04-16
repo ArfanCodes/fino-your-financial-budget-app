@@ -16,7 +16,10 @@ import { Feather } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useRoute, RouteProp } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useFinanceStore } from "../../store/finance.store";
 import { Button } from "../../components/Button";
 import { InputField } from "../../components/InputField";
@@ -204,11 +207,11 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+      <View style={styles.header}>
         <Pressable
           onPress={() =>
             fromAddExpense
@@ -371,7 +374,7 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
           />
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 };
 

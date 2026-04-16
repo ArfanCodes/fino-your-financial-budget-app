@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -15,7 +21,10 @@ import {
   Platform,
   Animated,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useEmergencyMode } from "../../context/EmergencyModeContext";
 import { useFinanceStore } from "../../store/finance.store";
@@ -44,11 +53,21 @@ const StatTile: React.FC<{
   icon: React.ComponentProps<typeof Feather>["name"];
   emergency?: boolean;
 }> = ({ label, value, accent = Colors.primary, icon, emergency }) => (
-  <View style={[tileStyles.tile, { borderColor: `${accent}35`, backgroundColor: emergency ? "#200808" : Colors.surface }]}>
+  <View
+    style={[
+      tileStyles.tile,
+      {
+        borderColor: `${accent}35`,
+        backgroundColor: emergency ? "#200808" : Colors.surface,
+      },
+    ]}
+  >
     <View style={[tileStyles.iconWrap, { backgroundColor: `${accent}22` }]}>
       <Feather name={icon} size={18} color={accent} />
     </View>
-    <Text style={tileStyles.value} numberOfLines={1}>{value}</Text>
+    <Text style={tileStyles.value} numberOfLines={1}>
+      {value}
+    </Text>
     <Text style={tileStyles.label}>{label}</Text>
   </View>
 );
@@ -101,7 +120,9 @@ const CategoryBreakdownRow: React.FC<{
           <Text style={[cbStyles.rank, { color }]}>{rank}</Text>
         </View>
         <View style={[cbStyles.dot, { backgroundColor: color }]} />
-        <Text style={cbStyles.name} numberOfLines={1}>{name}</Text>
+        <Text style={cbStyles.name} numberOfLines={1}>
+          {name}
+        </Text>
       </View>
       <View style={cbStyles.right}>
         <Text style={cbStyles.spent}>{formatCurrency(spent)}</Text>
@@ -120,13 +141,34 @@ const cbStyles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.surfaceBorder,
   },
-  left: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, flex: 1 },
-  rankBadge: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  left: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    flex: 1,
+  },
+  rankBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
   rank: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   dot: { width: 10, height: 10, borderRadius: 5, flexShrink: 0 },
-  name: { fontSize: FontSize.md, color: Colors.textPrimary, fontWeight: FontWeight.medium, flex: 1 },
+  name: {
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    fontWeight: FontWeight.medium,
+    flex: 1,
+  },
   right: { alignItems: "flex-end", gap: 3, flexShrink: 0 },
-  spent: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.textPrimary },
+  spent: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+  },
   pct: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold },
 });
 
@@ -137,7 +179,11 @@ interface StableModalProps {
   onConfirmExit: () => void;
 }
 
-const StableModal: React.FC<StableModalProps> = ({ visible, onCancel, onConfirmExit }) => {
+const StableModal: React.FC<StableModalProps> = ({
+  visible,
+  onCancel,
+  onConfirmExit,
+}) => {
   const insets = useSafeAreaInsets();
   const upsertBudget = useFinanceStore((s) => s.upsertBudget);
   const [limitText, setLimitText] = useState("");
@@ -196,7 +242,6 @@ const StableModal: React.FC<StableModalProps> = ({ visible, onCancel, onConfirmE
           style={stableStyles.kavWrapper}
         >
           <View style={stableStyles.card}>
-
             {/* Title */}
             <Text style={stableStyles.title}>Exit Emergency Mode</Text>
             <Text style={stableStyles.subtitle}>
@@ -205,12 +250,20 @@ const StableModal: React.FC<StableModalProps> = ({ visible, onCancel, onConfirmE
 
             {/* Input */}
             <Text style={stableStyles.inputLabel}>NEW MONTHLY BUDGET</Text>
-            <View style={[stableStyles.inputWrapper, error ? { borderColor: Colors.danger } : {}]}>
+            <View
+              style={[
+                stableStyles.inputWrapper,
+                error ? { borderColor: Colors.danger } : {},
+              ]}
+            >
               <Text style={stableStyles.currencySymbol}>₹</Text>
               <TextInput
                 style={stableStyles.input}
                 value={limitText}
-                onChangeText={(t) => { setLimitText(formatIndian(t)); setError(null); }}
+                onChangeText={(t) => {
+                  setLimitText(formatIndian(t));
+                  setError(null);
+                }}
                 placeholder="e.g. 20,000"
                 placeholderTextColor={Colors.inputPlaceholder}
                 keyboardType="numeric"
@@ -233,7 +286,9 @@ const StableModal: React.FC<StableModalProps> = ({ visible, onCancel, onConfirmE
               ) : (
                 <>
                   <Feather name="check-circle" size={19} color={Colors.white} />
-                  <Text style={stableStyles.primaryBtnText}>Confirm & Exit Emergency Mode</Text>
+                  <Text style={stableStyles.primaryBtnText}>
+                    Confirm & Exit Emergency Mode
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
@@ -244,7 +299,9 @@ const StableModal: React.FC<StableModalProps> = ({ visible, onCancel, onConfirmE
               onPress={onCancel}
               activeOpacity={0.7}
             >
-              <Text style={stableStyles.cancelText}>Stay in Emergency Mode</Text>
+              <Text style={stableStyles.cancelText}>
+                Stay in Emergency Mode
+              </Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -356,9 +413,10 @@ const stableStyles = StyleSheet.create({
   },
 });
 
-
 // ─── Recovery Screen ──────────────────────────────────────────────────────────
-export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const RecoveryScreen: React.FC<{ navigation: any }> = ({
+  navigation,
+}) => {
   const insets = useSafeAreaInsets();
   const categories = useFinanceStore((s) => s.categories);
   const { exitEmergencyMode, isEmergencyModeActive } = useEmergencyMode();
@@ -372,15 +430,31 @@ export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     if (isEmergencyModeActive) {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.08, duration: 900, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
-        ])
+          Animated.timing(pulseAnim, {
+            toValue: 1.08,
+            duration: 900,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 900,
+            useNativeDriver: true,
+          }),
+        ]),
       ).start();
       Animated.loop(
         Animated.sequence([
-          Animated.timing(warnFlash, { toValue: 0.15, duration: 600, useNativeDriver: true }),
-          Animated.timing(warnFlash, { toValue: 1, duration: 600, useNativeDriver: true }),
-        ])
+          Animated.timing(warnFlash, {
+            toValue: 0.15,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(warnFlash, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ]),
       ).start();
     }
   }, [isEmergencyModeActive]);
@@ -440,7 +514,8 @@ export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   const topCategories = useMemo(() => {
     return Array.from(categorySpentMap.entries())
       .map(([id, spent]) => ({
-        id, spent,
+        id,
+        spent,
         name: categoryMap.get(id)?.name ?? "Unknown",
         color: categoryMap.get(id)?.color ?? Colors.primary,
       }))
@@ -450,7 +525,12 @@ export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 
   // ── Recommendations ───────────────────────────────────────────────────────
   const recommendations = useMemo(() => {
-    const recs: { icon: React.ComponentProps<typeof Feather>["name"]; title: string; subtitle: string; accent: string }[] = [];
+    const recs: {
+      icon: React.ComponentProps<typeof Feather>["name"];
+      title: string;
+      subtitle: string;
+      accent: string;
+    }[] = [];
 
     if (topCategoryId && topCategorySpent > 0) {
       recs.push({
@@ -472,7 +552,8 @@ export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       recs.push({
         icon: "pause-circle",
         title: "Pause non-essential spending",
-        subtitle: "Consider deferring discretionary purchases until the next month resets.",
+        subtitle:
+          "Consider deferring discretionary purchases until the next month resets.",
         accent: Colors.danger,
       });
     }
@@ -480,42 +561,57 @@ export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     recs.push({
       icon: "pie-chart",
       title: "Set per-category budgets",
-      subtitle: "Fine-grained category limits give you earlier warnings and better control.",
+      subtitle:
+        "Fine-grained category limits give you earlier warnings and better control.",
       accent: Colors.accent,
     });
 
     return recs;
-  }, [topCategoryId, topCategoryName, topCategorySpent, daysRemaining, dailyAllowedSpend]);
+  }, [
+    topCategoryId,
+    topCategoryName,
+    topCategorySpent,
+    daysRemaining,
+    dailyAllowedSpend,
+  ]);
 
   const isEmergency = state === "emergency";
   const accentColor = isEmergency ? Colors.danger : Colors.warning;
 
   return (
-    <View style={[
-      screenStyles.root,
-      isEmergencyModeActive && { backgroundColor: "#1a0000" },
-    ]}>
+    <SafeAreaView
+      style={[
+        screenStyles.root,
+        isEmergencyModeActive && { backgroundColor: "#1a0000" },
+      ]}
+      edges={["top", "left", "right"]}
+    >
       <StatusBar
         barStyle="light-content"
         backgroundColor={isEmergencyModeActive ? "#1a0000" : Colors.background}
       />
 
-
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <View style={[
-        screenStyles.header,
-        { paddingTop: insets.top + Spacing.sm },
-        isEmergencyModeActive && {
-          backgroundColor: '#2d0505',
-          borderBottomColor: '#cc1515',
-          borderBottomWidth: 1.5,
-        },
-      ]}>
+      <View
+        style={[
+          screenStyles.header,
+          { paddingTop: Spacing.lg },
+          isEmergencyModeActive && {
+            backgroundColor: "#2d0505",
+            borderBottomColor: "#cc1515",
+            borderBottomWidth: 1.5,
+          },
+        ]}
+      >
         <TouchableOpacity
           onPress={handleBackPress}
           style={[
             screenStyles.backBtn,
-            isEmergencyModeActive && { backgroundColor: `${Colors.danger}20`, borderWidth: 1, borderColor: `${Colors.danger}45` },
+            isEmergencyModeActive && {
+              backgroundColor: `${Colors.danger}20`,
+              borderWidth: 1,
+              borderColor: `${Colors.danger}45`,
+            },
           ]}
           activeOpacity={0.7}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -561,13 +657,19 @@ export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         showsVerticalScrollIndicator={false}
       >
         {/* ── Status Banner ─────────────────────────────────────────────────── */}
-        <View style={[
-          screenStyles.statusBanner,
-          {
-            borderColor: isEmergencyModeActive ? '#cc1515' : `${accentColor}35`,
-            backgroundColor: isEmergencyModeActive ? '#2a0404' : `${accentColor}0D`,
-          },
-        ]}>
+        <View
+          style={[
+            screenStyles.statusBanner,
+            {
+              borderColor: isEmergencyModeActive
+                ? "#cc1515"
+                : `${accentColor}35`,
+              backgroundColor: isEmergencyModeActive
+                ? "#2a0404"
+                : `${accentColor}0D`,
+            },
+          ]}
+        >
           <Animated.View
             style={[
               screenStyles.statusIconWrap,
@@ -598,31 +700,74 @@ export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         {/* ── Budget Summary ─────────────────────────────────────────────────── */}
         <Text style={screenStyles.sectionTitle}>Budget Summary</Text>
         <View style={screenStyles.tilesRow}>
-          <StatTile emergency={isEmergencyModeActive} icon="trending-up" label="Total Spent" value={formatCurrency(totalSpent)} accent={isEmergency ? Colors.danger : Colors.warning} />
-          <StatTile emergency={isEmergencyModeActive} icon="credit-card" label="Monthly Limit" value={formatCurrency(totalLimit)} accent={Colors.primary} />
+          <StatTile
+            emergency={isEmergencyModeActive}
+            icon="trending-up"
+            label="Total Spent"
+            value={formatCurrency(totalSpent)}
+            accent={isEmergency ? Colors.danger : Colors.warning}
+          />
+          <StatTile
+            emergency={isEmergencyModeActive}
+            icon="credit-card"
+            label="Monthly Limit"
+            value={formatCurrency(totalLimit)}
+            accent={Colors.primary}
+          />
         </View>
         <View style={[screenStyles.tilesRow, { marginTop: Spacing.sm }]}>
           {isEmergency ? (
-            <StatTile emergency={isEmergencyModeActive} icon="alert-triangle" label="Over Budget" value={formatCurrency(overBudgetAmount)} accent={Colors.danger} />
+            <StatTile
+              emergency={isEmergencyModeActive}
+              icon="alert-triangle"
+              label="Over Budget"
+              value={formatCurrency(overBudgetAmount)}
+              accent={Colors.danger}
+            />
           ) : (
-            <StatTile emergency={isEmergencyModeActive} icon="check-circle" label="Remaining" value={formatCurrency(remainingBudget)} accent={Colors.success} />
+            <StatTile
+              emergency={isEmergencyModeActive}
+              icon="check-circle"
+              label="Remaining"
+              value={formatCurrency(remainingBudget)}
+              accent={Colors.success}
+            />
           )}
-          <StatTile emergency={isEmergencyModeActive} icon="calendar" label="Days Left" value={`${daysRemaining} day${daysRemaining !== 1 ? "s" : ""}`} accent={Colors.info} />
+          <StatTile
+            emergency={isEmergencyModeActive}
+            icon="calendar"
+            label="Days Left"
+            value={`${daysRemaining} day${daysRemaining !== 1 ? "s" : ""}`}
+            accent={Colors.info}
+          />
         </View>
 
         {/* ── Daily Guidance ────────────────────────────────────────────────── */}
         {daysRemaining > 0 && (
           <>
             <Text style={screenStyles.sectionTitle}>Daily Guidance</Text>
-            <View style={[screenStyles.guidanceCard, isEmergencyModeActive && { backgroundColor: "#200808", borderColor: `${Colors.danger}30` }]}>
+            <View
+              style={[
+                screenStyles.guidanceCard,
+                isEmergencyModeActive && {
+                  backgroundColor: "#200808",
+                  borderColor: `${Colors.danger}30`,
+                },
+              ]}
+            >
               <View style={screenStyles.guidanceLeft}>
-                <Text style={screenStyles.guidanceLabel}>To recover, limit to</Text>
+                <Text style={screenStyles.guidanceLabel}>
+                  To recover, limit to
+                </Text>
                 <Text style={screenStyles.guidanceAmount}>
-                  {dailyAllowedSpend > 0 ? formatCurrency(Math.round(dailyAllowedSpend)) : "₹0"}
+                  {dailyAllowedSpend > 0
+                    ? formatCurrency(Math.round(dailyAllowedSpend))
+                    : "₹0"}
                   <Text style={screenStyles.guidanceUnit}> / day</Text>
                 </Text>
                 <Text style={screenStyles.guidanceSub}>
-                  for the next {daysRemaining} day{daysRemaining !== 1 ? "s" : ""}
+                  for the next {daysRemaining} day
+                  {daysRemaining !== 1 ? "s" : ""}
                 </Text>
               </View>
               <View style={screenStyles.guidanceIconBox}>
@@ -635,8 +780,18 @@ export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         {/* ── Top Categories ────────────────────────────────────────────────── */}
         {topCategories.length > 0 && (
           <>
-            <Text style={screenStyles.sectionTitle}>Top Spending Categories</Text>
-            <View style={[screenStyles.card, isEmergencyModeActive && { backgroundColor: "#200808", borderColor: `${Colors.danger}30` }]}>
+            <Text style={screenStyles.sectionTitle}>
+              Top Spending Categories
+            </Text>
+            <View
+              style={[
+                screenStyles.card,
+                isEmergencyModeActive && {
+                  backgroundColor: "#200808",
+                  borderColor: `${Colors.danger}30`,
+                },
+              ]}
+            >
               {topCategories.map((cat, i) => (
                 <CategoryBreakdownRow
                   key={cat.id}
@@ -654,8 +809,16 @@ export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         {/* ── Recommendations ───────────────────────────────────────────────── */}
         <Text style={screenStyles.sectionTitle}>Smart Recommendations</Text>
         {recommendations.map((rec, i) => (
-          <View key={i} style={[recStyles.card, { borderColor: `${rec.accent}25` }]}>
-            <View style={[recStyles.iconWrap, { backgroundColor: `${rec.accent}15` }]}>
+          <View
+            key={i}
+            style={[recStyles.card, { borderColor: `${rec.accent}25` }]}
+          >
+            <View
+              style={[
+                recStyles.iconWrap,
+                { backgroundColor: `${rec.accent}15` },
+              ]}
+            >
               <Feather name={rec.icon} size={16} color={rec.accent} />
             </View>
             <View style={recStyles.text}>
@@ -673,7 +836,9 @@ export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             activeOpacity={0.8}
           >
             <Feather name="shield" size={18} color={Colors.success} />
-            <Text style={screenStyles.exitCTAText}>I'm Stable — Exit Emergency Mode</Text>
+            <Text style={screenStyles.exitCTAText}>
+              I'm Stable — Exit Emergency Mode
+            </Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -684,7 +849,7 @@ export const RecoveryScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         onCancel={() => setShowStableModal(false)}
         onConfirmExit={handleConfirmExit}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -755,8 +920,19 @@ const screenStyles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.lg,
   },
-  statusIconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  statusTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, letterSpacing: -0.3 },
+  statusIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  statusTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    letterSpacing: -0.3,
+  },
   statusSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 3 },
   sectionTitle: {
     fontSize: FontSize.sm,
@@ -792,7 +968,11 @@ const screenStyles = StyleSheet.create({
     color: Colors.primary,
     letterSpacing: -1,
   },
-  guidanceUnit: { fontSize: FontSize.lg, fontWeight: FontWeight.medium, color: Colors.textSecondary },
+  guidanceUnit: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.medium,
+    color: Colors.textSecondary,
+  },
   guidanceSub: { fontSize: FontSize.md, color: Colors.textMuted },
   guidanceIconBox: {
     width: 64,
@@ -842,8 +1022,21 @@ const recStyles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.sm,
   },
-  iconWrap: { width: 44, height: 44, borderRadius: 13, alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    marginTop: 1,
+  },
   text: { flex: 1, gap: 5 },
-  title: { fontSize: FontSize.md, fontWeight: FontWeight.semibold, color: Colors.textPrimary, letterSpacing: -0.2 },
+  title: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textPrimary,
+    letterSpacing: -0.2,
+  },
   subtitle: { fontSize: FontSize.sm, color: Colors.textMuted, lineHeight: 20 },
 });

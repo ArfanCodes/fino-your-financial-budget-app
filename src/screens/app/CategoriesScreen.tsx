@@ -14,7 +14,10 @@ import { ConfirmModal } from "../../components/ConfirmModal";
 import { Feather } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useFinanceStore } from "../../store/finance.store";
 import {
   Colors,
@@ -368,7 +371,7 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       <ConfirmModal
@@ -382,7 +385,7 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
       />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+      <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -459,7 +462,7 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
           <Feather name="plus" size={24} color={Colors.white} />
         </TouchableOpacity>
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 

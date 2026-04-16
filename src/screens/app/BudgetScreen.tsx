@@ -23,7 +23,10 @@ import {
   StatusBar,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { useSafeAreaInsets as useInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets as useInsets,
+} from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import {
   useFinanceStore,
@@ -104,9 +107,7 @@ const BudgetRow: React.FC<BudgetRowProps> = React.memo(
         {/* Header */}
         <View style={rowStyles.header}>
           <View style={rowStyles.labelRow}>
-            <View
-              style={[rowStyles.dot, { backgroundColor: catColor }]}
-            />
+            <View style={[rowStyles.dot, { backgroundColor: catColor }]} />
             <Text style={rowStyles.categoryName} numberOfLines={1}>
               {category?.name ?? "Uncategorized"}
             </Text>
@@ -180,7 +181,7 @@ const BudgetRow: React.FC<BudgetRowProps> = React.memo(
         </Text>
       </View>
     );
-  }
+  },
 );
 
 BudgetRow.displayName = "BudgetRow";
@@ -291,9 +292,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
   // Populate form when opening for edit
   useEffect(() => {
     if (visible) {
-      setLimitText(
-        editBudget ? String(editBudget.monthly_limit) : ""
-      );
+      setLimitText(editBudget ? String(editBudget.monthly_limit) : "");
       setSelectedCatId(editBudget ? editBudget.category_id : null);
       setError(null);
     }
@@ -377,9 +376,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
                       name="layers"
                       size={12}
                       color={
-                        selectedCatId === null
-                          ? Colors.white
-                          : Colors.textMuted
+                        selectedCatId === null ? Colors.white : Colors.textMuted
                       }
                     />
                     <Text
@@ -645,10 +642,7 @@ const TotalCard: React.FC<TotalCardProps> = React.memo(
       <View style={heroStyles.card}>
         {/* Decorative orb */}
         <View
-          style={[
-            heroStyles.orb,
-            { backgroundColor: `${Colors.primary}20` },
-          ]}
+          style={[heroStyles.orb, { backgroundColor: `${Colors.primary}20` }]}
         />
 
         <View style={heroStyles.topRow}>
@@ -661,7 +655,11 @@ const TotalCard: React.FC<TotalCardProps> = React.memo(
             </Text>
           </View>
           <TouchableOpacity onPress={onEdit} style={heroStyles.editBtn}>
-            <Feather name={limit > 0 ? "edit-2" : "plus"} size={16} color={Colors.white} />
+            <Feather
+              name={limit > 0 ? "edit-2" : "plus"}
+              size={16}
+              color={Colors.white}
+            />
           </TouchableOpacity>
         </View>
 
@@ -703,8 +701,7 @@ const TotalCard: React.FC<TotalCardProps> = React.memo(
                   style={[
                     heroStyles.statValue,
                     {
-                      color:
-                        remaining < 0 ? Colors.danger : Colors.textPrimary,
+                      color: remaining < 0 ? Colors.danger : Colors.textPrimary,
                     },
                   ]}
                 >
@@ -717,7 +714,11 @@ const TotalCard: React.FC<TotalCardProps> = React.memo(
 
             {ratio >= 1 && (
               <View style={heroStyles.warningBanner}>
-                <Feather name="alert-triangle" size={12} color={Colors.danger} />
+                <Feather
+                  name="alert-triangle"
+                  size={12}
+                  color={Colors.danger}
+                />
                 <Text style={heroStyles.warningText}>
                   You've exceeded your monthly budget!
                 </Text>
@@ -727,11 +728,16 @@ const TotalCard: React.FC<TotalCardProps> = React.memo(
               <View
                 style={[
                   heroStyles.warningBanner,
-                  { backgroundColor: `${Colors.warning}18`, borderColor: `${Colors.warning}40` },
+                  {
+                    backgroundColor: `${Colors.warning}18`,
+                    borderColor: `${Colors.warning}40`,
+                  },
                 ]}
               >
                 <Feather name="alert-circle" size={12} color={Colors.warning} />
-                <Text style={[heroStyles.warningText, { color: Colors.warning }]}>
+                <Text
+                  style={[heroStyles.warningText, { color: Colors.warning }]}
+                >
                   You're close to your budget limit
                 </Text>
               </View>
@@ -746,7 +752,7 @@ const TotalCard: React.FC<TotalCardProps> = React.memo(
         )}
       </View>
     );
-  }
+  },
 );
 
 TotalCard.displayName = "TotalCard";
@@ -840,7 +846,8 @@ const heroStyles = StyleSheet.create({
   },
   noBudgetSubtext: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.medium,
     marginTop: -4,
   },
 });
@@ -875,7 +882,7 @@ export const BudgetScreen: React.FC = () => {
       fetchBudgets(month);
       fetchExpenses();
       fetchCategories();
-    }, [month, fetchBudgets, fetchExpenses, fetchCategories])
+    }, [month, fetchBudgets, fetchExpenses, fetchCategories]),
   );
 
   // ── Memoized calculations ───────────────────────────────────────────────────
@@ -892,7 +899,7 @@ export const BudgetScreen: React.FC = () => {
   /** Total amount spent this month */
   const totalSpent = useMemo(
     () => monthExpenses.reduce((sum, e) => sum + Number(e.amount), 0),
-    [monthExpenses]
+    [monthExpenses],
   );
 
   /** Map of categoryId → amount spent this month */
@@ -900,7 +907,10 @@ export const BudgetScreen: React.FC = () => {
     const map = new Map<string, number>();
     monthExpenses.forEach((e) => {
       if (e.category_id) {
-        map.set(e.category_id, (map.get(e.category_id) ?? 0) + Number(e.amount));
+        map.set(
+          e.category_id,
+          (map.get(e.category_id) ?? 0) + Number(e.amount),
+        );
       }
     });
     return map;
@@ -916,19 +926,19 @@ export const BudgetScreen: React.FC = () => {
   /** The "total" budget (category_id === null) */
   const totalBudget = useMemo(
     () => budgets.find((b) => b.category_id === null),
-    [budgets]
+    [budgets],
   );
 
   /** Per-category budgets only */
   const categoryBudgets = useMemo(
     () => budgets.filter((b) => b.category_id !== null),
-    [budgets]
+    [budgets],
   );
 
   /** Set of category IDs that already have a budget (to block duplicates in modal) */
   const usedCategoryIds = useMemo<Set<string | null>>(
     () => new Set(budgets.map((b) => b.category_id)),
-    [budgets]
+    [budgets],
   );
 
   // ── Handlers ────────────────────────────────────────────────────────────────
@@ -953,24 +963,20 @@ export const BudgetScreen: React.FC = () => {
       const catName =
         budget.category_id === null
           ? "Total Monthly Budget"
-          : categoryMap.get(budget.category_id)?.name ?? "this budget";
-      Alert.alert(
-        "Delete Budget",
-        `Remove "${catName}"?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              const err = await removeBudget(budget.id);
-              if (err) Alert.alert("Error", err);
-            },
+          : (categoryMap.get(budget.category_id)?.name ?? "this budget");
+      Alert.alert("Delete Budget", `Remove "${catName}"?`, [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const err = await removeBudget(budget.id);
+            if (err) Alert.alert("Error", err);
           },
-        ]
-      );
+        },
+      ]);
     },
-    [categoryMap, removeBudget]
+    [categoryMap, removeBudget],
   );
 
   const handleSave = useCallback(
@@ -984,7 +990,7 @@ export const BudgetScreen: React.FC = () => {
         setModalVisible(false);
       }
     },
-    [upsertBudget, month]
+    [upsertBudget, month],
   );
 
   // ── Render helpers ──────────────────────────────────────────────────────────
@@ -1004,12 +1010,17 @@ export const BudgetScreen: React.FC = () => {
         index={index}
       />
     ),
-    [categoryMap, categorySpentMap, openEdit, handleDelete]
+    [categoryMap, categorySpentMap, openEdit, handleDelete],
   );
 
   const listHeader = useMemo(
     () => (
-      <View style={{ paddingTop: insets.top + Spacing.md, paddingHorizontal: Spacing.md }}>
+      <View
+        style={{
+          paddingTop: Spacing.lg,
+          paddingHorizontal: Spacing.md,
+        }}
+      >
         {/* Screen header */}
         <View style={screenStyles.headerRow}>
           <View>
@@ -1045,14 +1056,13 @@ export const BudgetScreen: React.FC = () => {
       </View>
     ),
     [
-      insets.top,
       month,
       totalBudget,
       totalSpent,
       categoryBudgets.length,
       openAdd,
       openEditTotal,
-    ]
+    ],
   );
 
   const listFooter = useMemo(
@@ -1063,7 +1073,7 @@ export const BudgetScreen: React.FC = () => {
         }}
       />
     ),
-    [insets.bottom]
+    [insets.bottom],
   );
 
   const listEmpty = useMemo(
@@ -1076,14 +1086,16 @@ export const BudgetScreen: React.FC = () => {
           <Text style={screenStyles.emptyTitle}>No category budgets</Text>
           <Text style={screenStyles.emptySubtitle}>
             Tap{" "}
-            <Text style={{ color: Colors.primary, fontWeight: FontWeight.bold }}>
+            <Text
+              style={{ color: Colors.primary, fontWeight: FontWeight.bold }}
+            >
               +
             </Text>{" "}
             to track spending per category
           </Text>
         </View>
       ) : null,
-    [budgetsLoading, categoryBudgets.length]
+    [budgetsLoading, categoryBudgets.length],
   );
 
   if (budgetsLoading && budgets.length === 0) {
@@ -1095,7 +1107,7 @@ export const BudgetScreen: React.FC = () => {
   }
 
   return (
-    <View style={screenStyles.root}>
+    <SafeAreaView style={screenStyles.root} edges={["top", "left", "right"]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
       <FlatList
         data={categoryBudgets}
@@ -1121,7 +1133,7 @@ export const BudgetScreen: React.FC = () => {
         onSave={handleSave}
         isSaving={isSaving}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -1154,7 +1166,8 @@ const screenStyles = StyleSheet.create({
   },
   screenSub: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.medium,
     marginTop: 2,
   },
   addBtn: {

@@ -11,7 +11,10 @@ import {
 import { ConfirmModal } from "../../components/ConfirmModal";
 import { Feather } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useAuthStore } from "../../store/auth.store";
 import {
   Colors,
@@ -217,7 +220,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const initials = getInitials(user?.username || email);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       <ConfirmModal
@@ -236,7 +239,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       />
 
       {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
+      <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.closeBtn}
@@ -360,7 +363,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
 
         <Text style={styles.version}>Finance Tracker · v1.0.0</Text>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

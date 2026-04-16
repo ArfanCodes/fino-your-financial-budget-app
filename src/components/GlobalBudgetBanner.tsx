@@ -8,22 +8,24 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBudgetStatus } from "../hooks/useBudgetStatus";
 import { useEmergencyMode } from "../context/EmergencyModeContext";
-import { Colors, FontSize, FontWeight, Spacing } from "../utils/constants";
+import { Colors, FontSize, FontWeight, Spacing, Radius } from "../utils/constants";
 import { formatCurrency } from "../utils/helpers";
 import type { NavigationProp } from "@react-navigation/native";
 import type { AppStackParamList } from "../types";
 
 /**
- * Sticky banner shown at the BOTTOM of the tab bar area (above the tabs)
- * whenever the budget is at warning (≥80%) or emergency (≥100%) state.
- * Renders null when budget is safe or not set.
+ * Pinned banner rendered as absolute overlay at the TOP of every tab screen.
+ * Visible whenever budget reaches warning (≥80%) or emergency (≥100%) state.
+ * Returns null when budget is safe or not set.
  */
 export const GlobalBudgetBanner: React.FC = () => {
   const budgetStatus = useBudgetStatus();
   const { isEmergencyModeActive } = useEmergencyMode();
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
+  const insets = useSafeAreaInsets();
 
   const flashAnim = useRef(new Animated.Value(1)).current;
 
@@ -31,8 +33,8 @@ export const GlobalBudgetBanner: React.FC = () => {
     if (budgetStatus.state !== "safe") {
       const loop = Animated.loop(
         Animated.sequence([
-          Animated.timing(flashAnim, { toValue: 0.2, duration: 700, useNativeDriver: true }),
-          Animated.timing(flashAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+          Animated.timing(flashAnim, { toValue: 0.25, duration: 600, useNativeDriver: true }),
+          Animated.timing(flashAnim, { toValue: 1,    duration: 600, useNativeDriver: true }),
         ])
       );
       loop.start();
@@ -40,20 +42,20 @@ export const GlobalBudgetBanner: React.FC = () => {
     }
   }, [budgetStatus.state]);
 
-  // Don't show if safe, or if already in full emergency mode screen
   if (budgetStatus.state === "safe" || !budgetStatus.hasBudget) return null;
 
   const isEmergency = budgetStatus.state === "emergency";
   const accent = isEmergency ? Colors.danger : Colors.warning;
+  const bgColor = isEmergency ? "#200000" : "#1e1200";
 
   const label = isEmergency
-    ? `⚠ ${formatCurrency(budgetStatus.overBudgetAmount)} over budget`
+    ? `${formatCurrency(budgetStatus.overBudgetAmount)} over budget`
     : `${Math.round(budgetStatus.usageRatio * 100)}% of budget used`;
 
   const sub = isEmergency
     ? isEmergencyModeActive
-      ? "Emergency mode active · view recovery plan"
-      : "Tap to enter emergency mode"
+      ? "Emergency mode active · tap to view recovery plan"
+      : "Budget exceeded · tap to enter emergency mode"
     : `${formatCurrency(budgetStatus.remainingBudget)} remaining this month`;
 
   return (
@@ -61,20 +63,27 @@ export const GlobalBudgetBanner: React.FC = () => {
       style={[
         bannerStyles.banner,
         {
-          backgroundColor: isEmergency ? "#1a0000" : "#1a0e00",
-          borderTopColor: `${accent}60`,
+          top: insets.top,        // pin to status bar bottom
+          backgroundColor: bgColor,
+          borderBottomColor: `${accent}50`,
         },
       ]}
       onPress={() => navigation.navigate("Recovery")}
       activeOpacity={0.85}
     >
-      <Animated.View style={[bannerStyles.iconWrap, { backgroundColor: `${accent}20`, opacity: flashAnim }]}>
+      <Animated.View
+        style={[
+          bannerStyles.iconWrap,
+          { backgroundColor: `${accent}20`, opacity: flashAnim },
+        ]}
+      >
         <Feather
           name={isEmergency ? "alert-triangle" : "alert-circle"}
-          size={16}
+          size={15}
           color={accent}
         />
       </Animated.View>
+
       <View style={bannerStyles.text}>
         <Text style={[bannerStyles.label, { color: accent }]} numberOfLines={1}>
           {label}
@@ -83,31 +92,36 @@ export const GlobalBudgetBanner: React.FC = () => {
           {sub}
         </Text>
       </View>
-      <Feather name="chevron-right" size={16} color={accent} />
+
+      <Feather name="chevron-right" size={15} color={accent} />
     </TouchableOpacity>
   );
 };
 
 const bannerStyles = StyleSheet.create({
   banner: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    zIndex: 999,
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 9,
     paddingHorizontal: Spacing.md,
-    borderTopWidth: 1.5,
+    borderBottomWidth: 1.5,
     gap: Spacing.sm,
   },
   iconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 30,
+    height: 30,
+    borderRadius: Radius.sm,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
   text: {
     flex: 1,
-    gap: 2,
+    gap: 1,
   },
   label: {
     fontSize: FontSize.sm,
