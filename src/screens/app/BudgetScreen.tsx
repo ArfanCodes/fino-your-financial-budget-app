@@ -1108,7 +1108,7 @@ export const BudgetScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={screenStyles.root} edges={["top", "left", "right"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       <FlatList
         data={categoryBudgets}
         keyExtractor={keyExtractor}

@@ -881,7 +881,7 @@ export const AnalyticsScreen: React.FC = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
       <View style={styles.headerShell}>
         <Text style={styles.pageTitle}>Analytics</Text>

@@ -14,7 +14,7 @@ const AppShell: React.FC = () => {
   return (
     <>
       <StatusBar
-        style="light"
+        style={isEmergencyModeActive ? "light" : "dark"}
         backgroundColor={isEmergencyModeActive ? '#0d0101' : Colors.background}
       />
       <NavigationContainer
