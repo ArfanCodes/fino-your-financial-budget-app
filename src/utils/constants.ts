@@ -1,41 +1,41 @@
-// ─── Color Palette — Revolut/N26 inspired dark banking theme ──────────────────
+// ─── Color Palette — Fintech White & Electric Violet ─────────────────────────
 export const Colors = {
-  // Primary brand — controlled indigo accent
-  primary: '#6366F1',
-  primaryLight: '#818CF8',
-  primaryDark: '#4F46E5',
+  // Primary brand — Electric Violet from the cards
+  primary: '#7148FC',         
+  primaryLight: '#9474FF',
+  primaryDark: '#5024DE',
 
-  // Accent — teal, used sparingly
-  accent: '#14B8A6',
-  accentLight: '#2DD4BF',
-  accentDark: '#0F9484',
+  // Accent — Pink highlights for minor icons
+  accent: '#FF57A6',          
+  accentLight: '#FF88C2',
+  accentDark: '#D82E7E',
 
-  // Semantic
-  success: '#10B981',
-  warning: '#F59E0B',
-  danger: '#EF4444',
-  info: '#3B82F6',
+  // Semantic (Bright variations matching screenshot)
+  success: '#10C759', // Vibrant 'transfer' green
+  warning: '#FFAB00',
+  danger: '#FF3D71',  // Redish-pink for expensive transactions
+  info: '#00B8D9',
 
-  // Neutrals — deep neutral dark base (no blue cast, no purple tint)
-  background: '#0F172A',
-  surface: '#1E293B',
-  surfaceElevated: '#273549',
-  surfaceBorder: '#334155',
+  // Neutrals — Air-light fintech vibes
+  background: '#F6F8FD',      // Faint icy-lavender/white background
+  surface: '#FFFFFF',         // Crisp pure white cards
+  surfaceElevated: '#F2F5FB', // Soft button backgrounds (for pills)
+  surfaceBorder: '#E8ECF4',   // Very faint, airy borders
 
-  // Text
-  textPrimary: '#F8FAFC',
-  textSecondary: '#94A3B8',
-  textMuted: '#475569',
-  textInverse: '#0F172A',
+  // Text — Maximum readability
+  textPrimary: '#12141D',     // Stark dark black-navy for strong contrast
+  textSecondary: '#6B7280',   // Cool slate for subtext and axis labels
+  textMuted: '#9BA3BB',       // Lighter faint slate
+  textInverse: '#FFFFFF',     // White text on dark colored buttons
 
   // Input
-  inputBackground: '#1E293B',
-  inputBorder: '#334155',
-  inputBorderFocused: '#6366F1',
-  inputPlaceholder: '#475569',
+  inputBackground: '#F2F5FB',
+  inputBorder: '#E8ECF4',
+  inputBorderFocused: '#7148FC',
+  inputPlaceholder: '#9BA3BB',
 
   // Overlay
-  overlay: 'rgba(0, 0, 0, 0.65)',
+  overlay: 'rgba(18, 20, 29, 0.4)',
 
   // White/Black
   white: '#FFFFFF',

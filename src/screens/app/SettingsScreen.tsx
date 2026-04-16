@@ -7,7 +7,13 @@ import {
   TouchableOpacity,
   StatusBar,
   Animated,
+  Image,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Modal,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { ConfirmModal } from "../../components/ConfirmModal";
 import { Feather } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -32,90 +38,51 @@ type Props = {
 };
 type FeatherIcon = React.ComponentProps<typeof Feather>["name"];
 
-// ─── Pressable Row ─────────────────────────────────────────────────────────────
+// ─── Clean Arrow Row ───────────────────────────────────────────────────────────
 const SettingsRow: React.FC<{
   icon: FeatherIcon;
-  iconColor?: string;
-  iconBg?: string;
   label: string;
-  sublabel?: string;
   onPress?: () => void;
   destructive?: boolean;
-  showChevron?: boolean;
   isLast?: boolean;
-  right?: React.ReactNode;
-}> = React.memo(
-  ({
-    icon,
-    iconColor,
-    iconBg,
-    label,
-    sublabel,
-    onPress,
-    destructive,
-    showChevron = true,
-    isLast,
-    right,
-  }) => {
-    const scale = useRef(new Animated.Value(1)).current;
+}> = React.memo(({ icon, label, onPress, destructive, isLast }) => {
+  const scale = useRef(new Animated.Value(1)).current;
 
-    const onPressIn = () =>
-      Animated.spring(scale, {
-        toValue: 0.97,
-        useNativeDriver: true,
-        tension: 300,
-        friction: 10,
-      }).start();
+  const onPressIn = () =>
+    Animated.spring(scale, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
 
-    const onPressOut = () =>
-      Animated.spring(scale, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 300,
-        friction: 10,
-      }).start();
+  const onPressOut = () =>
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
 
-    const resolvedIconColor = destructive
-      ? Colors.danger
-      : (iconColor ?? Colors.textSecondary);
-    const resolvedIconBg = destructive
-      ? `${Colors.danger}18`
-      : (iconBg ?? Colors.surfaceElevated);
+  const resolvedColor = destructive ? Colors.danger : Colors.textPrimary;
 
-    return (
-      <Animated.View style={{ transform: [{ scale }] }}>
-        <TouchableOpacity
-          style={[rowStyles.row, isLast && rowStyles.rowLast]}
-          onPress={onPress}
-          onPressIn={onPress ? onPressIn : undefined}
-          onPressOut={onPress ? onPressOut : undefined}
-          activeOpacity={1}
-          disabled={!onPress}
-        >
-          <View
-            style={[rowStyles.iconWrap, { backgroundColor: resolvedIconBg }]}
-          >
-            <Feather name={icon} size={16} color={resolvedIconColor} />
-          </View>
-          <View style={rowStyles.content}>
-            <Text
-              style={[rowStyles.label, destructive && rowStyles.labelDanger]}
-            >
-              {label}
-            </Text>
-            {sublabel ? (
-              <Text style={rowStyles.sublabel}>{sublabel}</Text>
-            ) : null}
-          </View>
-          {right ?? null}
-          {showChevron && onPress && !right ? (
-            <Feather name="chevron-right" size={15} color={Colors.textMuted} />
-          ) : null}
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  },
-);
+  return (
+    <Animated.View style={{ transform: [{ scale }], width: "100%" }}>
+      <TouchableOpacity
+        style={[rowStyles.row, isLast && rowStyles.rowLast]}
+        onPress={onPress}
+        onPressIn={onPress ? onPressIn : undefined}
+        onPressOut={onPress ? onPressOut : undefined}
+        activeOpacity={1}
+        disabled={!onPress}
+      >
+        <Feather name={icon} size={18} color={resolvedColor} style={rowStyles.icon} />
+        <Text style={[rowStyles.label, { color: resolvedColor }]}>{label}</Text>
+        <Feather name="chevron-right" size={16} color={Colors.textMuted} />
+      </TouchableOpacity>
+    </Animated.View>
+  );
+});
 SettingsRow.displayName = "SettingsRow";
 
 const rowStyles = StyleSheet.create({
@@ -123,31 +90,18 @@ const rowStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.md,
-    paddingVertical: 13,
+    paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.surfaceBorder,
-    gap: Spacing.md,
+    borderBottomColor: Colors.surfaceBorder,
+    // Removed literal backgroundColor here to inherit from group and stop Android clipping
   },
   rowLast: { borderBottomWidth: 0 },
-  iconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  content: { flex: 1 },
+  icon: { marginRight: Spacing.md },
   label: {
+    flex: 1,
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     fontWeight: FontWeight.medium,
-  },
-  labelDanger: { color: Colors.danger },
-  sublabel: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    marginTop: 2,
   },
 });
 
@@ -163,46 +117,20 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
 );
 
 const secStyles = StyleSheet.create({
-  wrapper: { marginBottom: Spacing.sm },
+  wrapper: { marginBottom: Spacing.lg },
   label: {
-    fontSize: 10,
-    fontWeight: FontWeight.bold,
-    color: Colors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+    color: Colors.textSecondary,
     marginBottom: Spacing.sm,
     paddingHorizontal: 4,
   },
   group: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.surfaceBorder,
     overflow: "hidden",
-  },
-});
-
-// ─── Badge ─────────────────────────────────────────────────────────────────────
-const Badge: React.FC<{ label: string }> = ({ label }) => (
-  <View style={bdgStyles.badge}>
-    <Text style={bdgStyles.text}>{label}</Text>
-  </View>
-);
-
-const bdgStyles = StyleSheet.create({
-  badge: {
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: Radius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
-  },
-  text: {
-    fontSize: 10,
-    color: Colors.textMuted,
-    fontWeight: FontWeight.semibold,
-    letterSpacing: 0.3,
   },
 });
 
@@ -214,14 +142,50 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
   const isLoading = useAuthStore((s) => s.isLoading);
 
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPhoto, setEditPhoto] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const email = user?.email ?? "";
+  const email = user?.email ?? "hello@finance.com";
   const displayName = user?.username || email.split("@")[0] || "User";
+  const avatarUrl = user?.avatar_url;
   const initials = getInitials(user?.username || email);
+
+  const openEditModal = () => {
+    setEditName(displayName);
+    setEditPhoto(avatarUrl || null);
+    setShowEditModal(true);
+  };
+
+  const handlePickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      // Workaround because we don't have a storage bucket active: we'll save the local URI or base64 
+      // directly to Firestore for simulation purposes. In prod, upload this URI to Firebase Storage and save the public URL.
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      setEditPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim()) return;
+    setIsSaving(true);
+    const { updateProfile } = useAuthStore.getState();
+    await updateProfile(editName, editPhoto || undefined);
+    setIsSaving(false);
+    setShowEditModal(false);
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
       <ConfirmModal
         visible={showSignOutModal}
@@ -242,15 +206,62 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.closeBtn}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.iconBtn}
           activeOpacity={0.7}
         >
-          <Feather name="x" size={18} color={Colors.textPrimary} />
+          <Feather name="chevron-left" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{ width: 36 }} />
+        <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={openEditModal}>
+          <Feather name="edit-2" size={16} color={Colors.textPrimary} />
+        </TouchableOpacity>
       </View>
+
+      {/* ── Edit Profile Modal ── */}
+      <Modal visible={showEditModal} transparent animationType="slide" onRequestClose={() => setShowEditModal(false)}>
+        <View style={modalStyles.overlay}>
+          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: "100%" }}>
+            <View style={[modalStyles.sheet, { paddingBottom: insets.bottom + Spacing.lg }]}>
+              <View style={modalStyles.handle} />
+              <View style={modalStyles.header}>
+                <Text style={modalStyles.title}>Edit Profile</Text>
+                <TouchableOpacity onPress={() => setShowEditModal(false)} style={modalStyles.closeBtn}>
+                  <Feather name="x" size={18} color={Colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={modalStyles.avatarSection}>
+                <TouchableOpacity style={styles.avatarWrap} onPress={handlePickImage} activeOpacity={0.8}>
+                  {editPhoto ? (
+                    <Image source={{ uri: editPhoto }} style={modalStyles.avatarImage} />
+                  ) : (
+                    <Text style={styles.avatarText}>{getInitials(editName || email)}</Text>
+                  )}
+                  <View style={modalStyles.cameraBadge}>
+                    <Feather name="camera" size={12} color={Colors.white} />
+                  </View>
+                </TouchableOpacity>
+                <Text style={modalStyles.avatarHelper}>Tap to change photo</Text>
+              </View>
+
+              <View style={modalStyles.inputSection}>
+                <Text style={modalStyles.inputLabel}>Display Name</Text>
+                <TextInput
+                  style={modalStyles.input}
+                  value={editName}
+                  onChangeText={setEditName}
+                  placeholder="Enter your name"
+                  placeholderTextColor={Colors.inputPlaceholder}
+                />
+              </View>
+
+              <TouchableOpacity style={[modalStyles.saveBtn, isSaving && { opacity: 0.7 }]} onPress={handleSaveProfile} disabled={isSaving}>
+                <Text style={modalStyles.saveBtnText}>{isSaving ? "Saving..." : "Save Changes"}</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -259,15 +270,15 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
           { paddingBottom: insets.bottom + 40 },
         ]}
       >
-        {/* ── Profile Hero ── */}
-        <View style={styles.profileCard}>
-          <View style={styles.profileOrb} />
-          <View style={styles.avatarWrap}>
-            <Text style={styles.avatarText}>{initials}</Text>
-            <View style={styles.avatarBadge}>
-              <Feather name="check" size={8} color={Colors.white} />
-            </View>
-          </View>
+        {/* ── Center Profile Hero ── */}
+        <View style={styles.profileHero}>
+          <TouchableOpacity style={styles.avatarWrap} onPress={openEditModal} activeOpacity={0.9}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={modalStyles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>{initials}</Text>
+            )}
+          </TouchableOpacity>
           <Text style={styles.profileName} numberOfLines={1}>
             {displayName}
           </Text>
@@ -276,92 +287,74 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
           </Text>
         </View>
 
-        {/* ── Preferences ── */}
-        <Section title="Preferences">
+        {/* ── Premium Banner ── */}
+        <TouchableOpacity
+          style={styles.premiumBanner}
+          activeOpacity={0.9}
+        >
+          <View style={styles.premiumIconWrap}>
+            <Feather name="award" size={18} color={Colors.white} />
+          </View>
+          <View>
+            <Text style={styles.premiumTitle}>Premium Account</Text>
+            <Text style={styles.premiumSub}>Enjoy your premium features</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* ── Sections ── */}
+        <Section title="Account Settings">
+          <SettingsRow
+            icon="user"
+            label="Account"
+            onPress={() => {}}
+          />
           <SettingsRow
             icon="bell"
-            iconColor={Colors.warning}
-            iconBg={`${Colors.warning}18`}
             label="Notifications"
-            sublabel="Push alerts & reminders"
-            right={<Badge label="Soon" />}
-            showChevron={false}
+            onPress={() => {}}
           />
           <SettingsRow
             icon="shield"
-            iconColor={Colors.success}
-            iconBg={`${Colors.success}18`}
-            label="Security"
-            sublabel="Biometrics & PIN"
-            right={<Badge label="Soon" />}
-            showChevron={false}
-          />
-          <SettingsRow
-            icon="moon"
-            iconColor={Colors.primaryLight}
-            iconBg={`${Colors.primary}18`}
-            label="Appearance"
-            sublabel="Dark mode"
-            right={<Badge label="Soon" />}
-            showChevron={false}
+            label="Security & Privacy"
+            onPress={() => {}}
             isLast
           />
         </Section>
 
-        {/* ── Data ── */}
-        <Section title="Data">
+        <Section title="Data & Preferences">
+          <SettingsRow
+            icon="sliders"
+            label="Preferences"
+            onPress={() => {}}
+          />
           <SettingsRow
             icon="download"
-            iconColor={Colors.accent}
-            iconBg={`${Colors.accent}18`}
             label="Export Data"
-            sublabel="Download your transactions as CSV"
-            right={<Badge label="Soon" />}
-            showChevron={false}
+            onPress={() => {}}
           />
           <SettingsRow
             icon="refresh-cw"
-            iconColor={Colors.info}
-            iconBg={`${Colors.info}18`}
             label="Sync"
-            sublabel="Last synced just now"
-            showChevron={false}
+            onPress={() => {}}
             isLast
           />
         </Section>
 
-        {/* ── Support ── */}
-        <Section title="Support">
+        <Section title="Settings">
           <SettingsRow
             icon="help-circle"
-            iconColor={Colors.textSecondary}
-            label="Help & FAQ"
-            right={<Badge label="Soon" />}
-            showChevron={false}
+            label="Help & Support"
+            onPress={() => {}}
           />
-          <SettingsRow
-            icon="message-circle"
-            iconColor={Colors.textSecondary}
-            label="Send Feedback"
-            right={<Badge label="Soon" />}
-            showChevron={false}
-            isLast
-          />
-        </Section>
-
-        {/* ── Account ── */}
-        <Section title="Account">
           <SettingsRow
             icon="log-out"
-            label={isLoading ? "Signing out…" : "Sign Out"}
+            label={isLoading ? "Signing out…" : "Log out"}
             onPress={() => setShowSignOutModal(true)}
             destructive
-            showChevron={false}
             isLast
           />
         </Section>
 
-        <Text style={styles.version}>Finance Tracker · v1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -376,109 +369,198 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
   },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
   },
   headerTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
-    letterSpacing: -0.3,
   },
 
   scroll: {
-    paddingHorizontal: Spacing.md,
-    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
   },
 
-  // Profile card
-  profileCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.surfaceBorder,
-    padding: Spacing.lg,
+  // Profile Hero
+  profileHero: {
     alignItems: "center",
-    overflow: "hidden",
-    marginBottom: Spacing.sm,
-    elevation: 4,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-  },
-  profileOrb: {
-    position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: `${Colors.primary}0C`,
-    top: -80,
-    right: -60,
+    marginBottom: Spacing.xl,
   },
   avatarWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.primaryDark,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 3,
-    borderColor: Colors.primary,
     marginBottom: Spacing.md,
-    elevation: 6,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.3,
     shadowRadius: 10,
+    elevation: 5,
   },
   avatarText: {
-    fontSize: FontSize.xl,
+    fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold,
     color: Colors.white,
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
-  avatarBadge: {
+  profileName: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  profileEmail: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.medium,
+  },
+
+  // Premium Banner
+  premiumBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.xl,
+    padding: Spacing.md,
+    marginBottom: Spacing.xl,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  premiumIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  premiumTitle: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+    marginBottom: 2,
+  },
+  premiumSub: {
+    fontSize: FontSize.xs,
+    color: "rgba(255, 255, 255, 0.8)",
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.surfaceBorder,
+    alignSelf: "center",
+    marginBottom: Spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  title: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.surfaceElevated,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarSection: {
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 40,
+  },
+  cameraBadge: {
     position: "absolute",
-    bottom: 2,
-    right: 2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: Colors.success,
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
     borderColor: Colors.surface,
   },
-  profileName: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    letterSpacing: -0.3,
-    textTransform: "capitalize",
-    marginBottom: 3,
+  avatarHelper: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    marginTop: Spacing.sm,
   },
-  profileEmail: {
+  inputSection: {
+    marginBottom: Spacing.xl,
+  },
+  inputLabel: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
+    fontWeight: FontWeight.medium,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xs,
   },
-
-  version: {
-    textAlign: "center",
-    fontSize: 11,
-    color: Colors.textMuted,
-    paddingVertical: Spacing.md,
-    letterSpacing: 0.3,
+  input: {
+    backgroundColor: Colors.inputBackground,
+    borderWidth: 1,
+    borderColor: Colors.inputBorder,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    height: 50,
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+  },
+  saveBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.md,
+    height: 52,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveBtnText: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
   },
 });

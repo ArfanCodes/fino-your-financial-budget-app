@@ -9,26 +9,27 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import type { LoginFormValues, SignupFormValues, User } from "../types";
 
-// Fetch username from Firestore users collection
-const fetchUsername = async (uid: string): Promise<string> => {
+const fetchUserData = async (uid: string): Promise<{ username: string; avatar_url?: string }> => {
   try {
     const snap = await getDoc(doc(db, "users", uid));
     if (snap.exists()) {
-      return (snap.data() as any).username ?? "";
+      const data = snap.data();
+      return { username: data.username ?? "", avatar_url: data.avatar_url };
     }
   } catch (e) {
-    console.warn("[Auth] Failed to fetch username:", e);
+    console.warn("[Auth] Failed to fetch user data:", e);
   }
-  return "";
+  return { username: "" };
 };
 
 // Map Firebase User to our App User type
 const mapUser = async (user: FirebaseUser): Promise<User> => {
-  const username = await fetchUsername(user.uid);
+  const { username, avatar_url } = await fetchUserData(user.uid);
   return {
     id: user.uid,
     email: user.email!,
     username,
+    avatar_url,
     created_at: user.metadata.creationTime || new Date().toISOString(),
   };
 };
@@ -146,5 +147,17 @@ export const authService = {
         callback(null);
       }
     });
+  },
+
+  /**
+   * Update User Profile
+   */
+  async updateProfile(uid: string, username: string, avatar_url?: string): Promise<string | null> {
+    try {
+      await setDoc(doc(db, "users", uid), { username: username.trim(), avatar_url }, { merge: true });
+      return null;
+    } catch (err: any) {
+      return err.message || "Failed to update profile";
+    }
   },
 };

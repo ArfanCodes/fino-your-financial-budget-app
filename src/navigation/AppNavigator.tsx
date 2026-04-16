@@ -16,6 +16,7 @@ import { SettingsNavigator } from "./SettingsNavigator";
 import { RecoveryScreen } from "../screens/app/RecoveryScreen";
 import { AnalyticsScreen } from "../screens/app/AnalyticsScreen";
 import type { TabParamList, AppStackParamList } from "../types";
+import { Colors } from "../utils/constants";
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -98,7 +99,7 @@ const NavTab: React.FC<{
         <Feather
           name={icon}
           size={20}
-          color={isFocused ? accent : "#94A3B8"}
+          color={isFocused ? accent : Colors.textMuted}
         />
         
         <Animated.View
@@ -171,7 +172,7 @@ const MainTabs: React.FC = () => {
         tabBar={(props) => <CustomTabBar {...props} insets={insets} />}
         screenOptions={{
           headerShown: false,
-          sceneContainerStyle: { backgroundColor: "#0F172A" },
+          sceneContainerStyle: { backgroundColor: Colors.background },
         }}
       >
         <Tab.Screen name="Overview"        component={DashboardScreen}   />
@@ -193,7 +194,7 @@ export const AppNavigator: React.FC = () => (
       options={{
         presentation: "modal",
         animation: "slide_from_bottom",
-        contentStyle: { backgroundColor: "#0F172A" },
+        contentStyle: { backgroundColor: Colors.background },
       }}
     />
     <Stack.Screen
@@ -201,7 +202,7 @@ export const AppNavigator: React.FC = () => (
       component={RecoveryScreen}
       options={{
         animation: "slide_from_right",
-        contentStyle: { backgroundColor: "#0F172A" },
+        contentStyle: { backgroundColor: Colors.background },
       }}
     />
   </Stack.Navigator>
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     height: 64,
-    backgroundColor: "#1E293B",
+    backgroundColor: Colors.surface,
     borderRadius: 32,
     flexDirection: "row",
     alignItems: "center",
@@ -222,15 +223,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     
     // Shadow to float beautifully over content
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.2, // Slightly lighter shadow for a neon theme
     shadowRadius: 10,
     elevation: 10,
     
     // Subtle border for premium feel
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
+    borderColor: Colors.surfaceBorder,
   },
   tabPill: {
     flexDirection: "row",

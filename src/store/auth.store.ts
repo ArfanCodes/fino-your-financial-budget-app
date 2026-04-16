@@ -19,6 +19,7 @@ interface AuthStore {
   signIn: (values: LoginFormValues) => Promise<boolean>;
   signUp: (values: SignupFormValues) => Promise<{ success: boolean; needsConfirmation: boolean }>;
   signOut: () => Promise<void>;
+  updateProfile: (username: string, avatar_url?: string) => Promise<{ success: boolean; error: string | null }>;
   clearError: () => void;
 }
 
@@ -85,6 +86,20 @@ export const useAuthStore = create<AuthStore>((set, _get) => ({
     // Clear all cached finance data so next user starts fresh
     useFinanceStore.getState().resetFinance();
     set({ isLoading: false, user: null, error: null });
+  },
+
+  updateProfile: async (username: string, avatar_url?: string) => {
+    const s = _get();
+    if (!s.user) return { success: false, error: "Not logged in" };
+    set({ isLoading: true, error: null });
+    const err = await authService.updateProfile(s.user.id, username, avatar_url ?? s.user.avatar_url);
+    if (err) {
+      set({ isLoading: false, error: err });
+      return { success: false, error: err };
+    }
+    // Update local user state
+    set({ isLoading: false, user: { ...s.user, username: username.trim(), avatar_url: avatar_url ?? s.user.avatar_url }, error: null });
+    return { success: true, error: null };
   },
 
   clearError: () => set({ error: null }),
