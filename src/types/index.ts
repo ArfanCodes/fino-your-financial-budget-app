@@ -45,7 +45,6 @@ export type AuthStackParamList = {
 
 export type AppStackParamList = {
   MainTabs: undefined;
-  Settings: undefined;
   Recovery: undefined;
 };
 
@@ -59,6 +58,7 @@ export type TabParamList = {
   TransactionsTab: undefined;
   BudgetTab: undefined;
   Analytics: undefined;
+  SettingsTab: undefined;
 };
 
 // ─── Transactions Stack (Transactions tab: list → add → categories) ───────────

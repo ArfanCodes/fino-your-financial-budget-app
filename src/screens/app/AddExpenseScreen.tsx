@@ -181,13 +181,13 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
             { opacity: pressed ? 0.5 : 1 },
           ]}
         >
-          <Feather name="arrow-left" size={20} color={Colors.textPrimary} />
+          <Feather name="arrow-left" size={18} color={Colors.textPrimary} />
         </Pressable>
         <Text style={styles.title}>Add Expense</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Amount Hero Card */}
+      {/* Amount Hero Card (lime) */}
       <Controller
         control={control}
         name="amount"
@@ -209,19 +209,18 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                   !value && styles.amountPlaceholder,
                 ]}
                 placeholder="0.00"
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor="rgba(15,17,21,0.35)"
                 keyboardType="decimal-pad"
                 returnKeyType="next"
                 value={formatAmountDisplay(value)}
                 onChangeText={(text) => {
-                  // Strip commas before storing — keep only digits and one dot
                   const raw = text.replace(/,/g, "");
                   onChange(raw);
                 }}
                 onBlur={onBlur}
                 editable={!isSubmitting}
-                selectionColor={Colors.primary}
-                cursorColor={Colors.primary}
+                selectionColor={Colors.brandBlack}
+                cursorColor={Colors.brandBlack}
               />
             </View>
             {errors.amount && (
@@ -246,7 +245,6 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
           {/* Category Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Feather name="tag" size={14} color={Colors.primary} />
               <Text style={styles.sectionLabel}>Category</Text>
               {errors.category_id && (
                 <Text style={styles.errorLabel}>
@@ -297,8 +295,7 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                             style={[
                               styles.categoryChip,
                               isSelected && {
-                                borderColor: cat.color,
-                                backgroundColor: `${cat.color}22`,
+                                backgroundColor: Colors.brandBlack,
                               },
                             ]}
                             onPress={() =>
@@ -306,35 +303,37 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                                 shouldValidate: true,
                               })
                             }
-                            activeOpacity={0.75}
+                            activeOpacity={0.85}
                             disabled={isSubmitting}
                           >
                             <View
                               style={[
-                                styles.categoryDot,
-                                { backgroundColor: cat.color },
-                                isSelected && styles.categoryDotSelected,
+                                styles.categoryIcon,
+                                {
+                                  backgroundColor: isSelected
+                                    ? `${cat.color}33`
+                                    : `${cat.color}1F`,
+                                },
                               ]}
-                            />
+                            >
+                              <Text
+                                style={[
+                                  styles.categoryIconLetter,
+                                  { color: cat.color },
+                                ]}
+                              >
+                                {cat.name.charAt(0).toUpperCase()}
+                              </Text>
+                            </View>
                             <Text
                               style={[
                                 styles.categoryChipText,
-                                isSelected && {
-                                  color: cat.color,
-                                  fontWeight: FontWeight.semibold,
-                                },
+                                isSelected && styles.categoryChipTextSelected,
                               ]}
                               numberOfLines={1}
                             >
                               {cat.name}
                             </Text>
-                            {isSelected && (
-                              <Feather
-                                name="check"
-                                size={12}
-                                color={cat.color}
-                              />
-                            )}
                           </TouchableOpacity>
                         );
                       })}
@@ -351,7 +350,7 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                       >
                         <Feather
                           name="plus"
-                          size={16}
+                          size={15}
                           color={Colors.textSecondary}
                         />
                         <Text style={styles.addCategoryText}>New</Text>
@@ -366,7 +365,6 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
           {/* Date & Note Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Feather name="calendar" size={14} color={Colors.primary} />
               <Text style={styles.sectionLabel}>Details</Text>
             </View>
             {/* Date Picker Trigger */}
@@ -388,12 +386,12 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
                     <View style={styles.datePickerIconWrap}>
                       <Feather
                         name="calendar"
-                        size={16}
-                        color={Colors.primary}
+                        size={15}
+                        color={Colors.accent}
                       />
                     </View>
                     <View style={styles.datePickerInfo}>
-                      <Text style={styles.datePickerLabel}>Date</Text>
+                      <Text style={styles.datePickerLabel}>DATE</Text>
                       <Text style={styles.datePickerValue}>
                         {value ? displayDate(value) : "Select a date"}
                       </Text>
@@ -455,7 +453,6 @@ export const AddExpenseScreen: React.FC<Props> = ({ navigation }) => {
           {/* Payment Method Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Feather name="credit-card" size={14} color={Colors.primary} />
               <Text style={styles.sectionLabel}>Payment Method</Text>
             </View>
             <Controller
@@ -539,251 +536,268 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.sm,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: Colors.surface,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 0,
   },
   title: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
+    fontSize: 17,
+    fontWeight: "800",
     color: Colors.textPrimary,
-    letterSpacing: 0.2,
+    letterSpacing: -0.3,
   },
 
-  // Amount card
+  // Amount card (lime hero — premium focus)
   amountCard: {
     marginHorizontal: Spacing.lg,
     marginVertical: Spacing.md,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
+    backgroundColor: Colors.primary,
+    borderRadius: 24,
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 18,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 0,
   },
   amountLabel: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semibold,
-    color: Colors.textMuted,
-    letterSpacing: 1.2,
-    marginBottom: Spacing.xs,
+    fontSize: 11,
+    fontWeight: "700",
+    color: Colors.textOnLime,
+    opacity: 0.75,
+    letterSpacing: 1.4,
+    marginBottom: 6,
   },
   amountRow: {
     flexDirection: "row",
     alignItems: "flex-end",
-    gap: 4,
+    gap: 6,
   },
   currencySymbol: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.primary,
+    fontSize: 28,
+    fontWeight: "800",
+    color: Colors.textOnLime,
     lineHeight: 44,
   },
   amountDisplay: {
     fontSize: 40,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    fontWeight: "800",
+    color: Colors.textOnLime,
     flex: 1,
     lineHeight: 52,
     paddingVertical: 0,
     includeFontPadding: false,
+    letterSpacing: -1.5,
   },
   amountPlaceholder: {
-    color: Colors.textMuted,
+    color: "rgba(15,17,21,0.35)",
   },
   amountError: {
-    fontSize: FontSize.xs,
+    fontSize: 12,
     color: Colors.danger,
-    marginTop: 4,
-    fontWeight: FontWeight.medium,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    alignSelf: "flex-start",
+    marginTop: 8,
+    fontWeight: "700",
   },
 
-  // Sections
+  // Sections (borderless card)
   section: {
     marginBottom: Spacing.md,
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
+    borderRadius: 22,
     padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 0,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginBottom: Spacing.md,
+    justifyContent: "space-between",
+    marginBottom: 14,
   },
   sectionLabel: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semibold,
-    color: Colors.textMuted,
-    letterSpacing: 0.9,
-    textTransform: "uppercase",
-    flex: 1,
+    fontSize: 13,
+    fontWeight: "800",
+    color: Colors.textPrimary,
+    letterSpacing: -0.2,
   },
   errorLabel: {
-    fontSize: 10,
+    fontSize: 11,
     color: Colors.danger,
-    fontWeight: FontWeight.medium,
+    fontWeight: "600",
   },
   loadingText: {
-    fontSize: FontSize.sm,
+    fontSize: 13,
     color: Colors.textMuted,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
+    fontWeight: "600",
   },
 
   // No category
   noCategoryBox: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.sm,
+    gap: 10,
     backgroundColor: `${Colors.warning}12`,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: `${Colors.warning}40`,
+    borderRadius: 14,
+    padding: 12,
   },
   noCategoryIconWrap: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 10,
     backgroundColor: `${Colors.warning}20`,
     alignItems: "center",
     justifyContent: "center",
   },
   noCategoryText: {
     color: Colors.warning,
-    fontSize: FontSize.sm,
+    fontSize: 13,
+    fontWeight: "700",
     flex: 1,
   },
 
-  // Category grid
+  // Category grid (pill with rounded-square icon)
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.sm,
+    gap: 8,
   },
   categoryChip: {
     flexDirection: "row",
     alignItems: "center",
     flexBasis: "47%",
     flexGrow: 1,
-    paddingVertical: 10,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.lg,
+    paddingVertical: 8,
+    paddingLeft: 8,
+    paddingRight: 14,
+    borderRadius: 14,
     backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1.5,
-    borderColor: Colors.surfaceBorder,
-    gap: 7,
+    gap: 10,
   },
-  categoryDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  categoryIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
     flexShrink: 0,
   },
-  categoryDotSelected: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  categoryIconLetter: {
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: -0.2,
   },
   categoryChipText: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
+    fontSize: 13.5,
+    color: Colors.textPrimary,
+    fontWeight: "700",
     flex: 1,
+    letterSpacing: -0.2,
+  },
+  categoryChipTextSelected: {
+    color: Colors.white,
   },
   addCategoryChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingVertical: 10,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.surfaceElevated,
+    justifyContent: "center",
+    gap: 5,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: Colors.background,
     borderWidth: 1.5,
     borderColor: Colors.surfaceBorder,
     borderStyle: "dashed",
   },
   addCategoryText: {
-    fontSize: FontSize.sm,
-    color: Colors.textMuted,
-    fontWeight: FontWeight.medium,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: "700",
   },
 
   // Payment method
   paymentGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.sm,
+    gap: 8,
   },
   paymentChip: {
     flexBasis: "30%",
     flexGrow: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
+    gap: 6,
     paddingVertical: 10,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.lg,
+    paddingHorizontal: 10,
+    borderRadius: 14,
     backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1.5,
-    borderColor: Colors.surfaceBorder,
   },
   paymentChipSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: `${Colors.primary}18`,
+    backgroundColor: Colors.brandBlack,
   },
   paymentIconWrap: {
-    width: 26,
-    height: 26,
+    width: 24,
+    height: 24,
     borderRadius: 8,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
   paymentIconWrapSelected: {
-    backgroundColor: Colors.primary,
+    backgroundColor: "rgba(204,250,50,0.25)",
   },
   paymentText: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
+    fontSize: 12.5,
+    color: Colors.textPrimary,
+    fontWeight: "700",
     flex: 1,
   },
   paymentTextSelected: {
-    color: Colors.primary,
-    fontWeight: FontWeight.semibold,
+    color: Colors.white,
   },
 
   // Date picker
   datePickerBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.md,
+    gap: 12,
     backgroundColor: Colors.surfaceElevated,
-    borderRadius: Radius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.surfaceBorder,
+    borderRadius: 14,
     paddingVertical: 12,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: 12,
     marginBottom: Spacing.md,
   },
   datePickerBtnError: {
-    borderColor: Colors.danger,
+    backgroundColor: `${Colors.danger}10`,
   },
   datePickerIconWrap: {
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: `${Colors.primary}18`,
+    backgroundColor: `${Colors.accent}1F`,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -792,24 +806,24 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   datePickerLabel: {
-    fontSize: FontSize.xs,
+    fontSize: 10,
     color: Colors.textMuted,
-    fontWeight: FontWeight.medium,
-    letterSpacing: 0.4,
-    textTransform: "uppercase",
+    fontWeight: "700",
+    letterSpacing: 0.6,
   },
   datePickerValue: {
-    fontSize: FontSize.md,
+    fontSize: 14,
     color: Colors.textPrimary,
-    fontWeight: FontWeight.semibold,
+    fontWeight: "700",
+    letterSpacing: -0.2,
   },
   dateError: {
-    fontSize: FontSize.xs,
+    fontSize: 11,
     color: Colors.danger,
     marginTop: -Spacing.sm,
     marginBottom: Spacing.sm,
     marginLeft: 2,
-    fontWeight: FontWeight.medium,
+    fontWeight: "600",
   },
 
   spacer: { flex: 1, minHeight: Spacing.lg },

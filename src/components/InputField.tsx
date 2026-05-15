@@ -62,7 +62,7 @@ export const InputField: React.FC<InputFieldProps> = ({
     inputRange: [0, 1],
     outputRange: [
       error ? Colors.danger : Colors.inputBorder,
-      error ? Colors.danger : Colors.inputBorderFocused,
+      error ? Colors.danger : Colors.brandBlack,
     ],
   });
 
@@ -145,14 +145,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
     letterSpacing: 0.3,
   },
-  labelFocused: { color: Colors.primary },
+  labelFocused: { color: Colors.brandBlack },
   labelError: { color: Colors.danger },
 
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.inputBackground,
-    borderRadius: Radius.md,
+    borderRadius: 14,
     borderWidth: 1.5,
     minHeight: 52,
   },

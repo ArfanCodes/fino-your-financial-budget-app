@@ -208,7 +208,7 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -224,7 +224,7 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
             { opacity: pressed ? 0.5 : 1 },
           ]}
         >
-          <Feather name="arrow-left" size={20} color={Colors.textPrimary} />
+          <Feather name="arrow-left" size={18} color={Colors.textPrimary} />
         </Pressable>
         <View style={styles.headerCenter}>
           <Text style={styles.title}>New Category</Text>
@@ -252,55 +252,31 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
               { transform: [{ scale: previewScale }] },
             ]}
           >
-            {/* Colored top accent */}
             <View
-              style={[styles.previewAccent, { backgroundColor: selectedColor }]}
-            />
-            <View style={styles.previewBody}>
-              <View
-                style={[
-                  styles.previewIconBubble,
-                  { backgroundColor: `${selectedColor}25` },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.previewIconDot,
-                    { backgroundColor: selectedColor },
-                  ]}
-                />
-              </View>
-              <View style={styles.previewInfo}>
-                <Text style={styles.previewName} numberOfLines={1}>
-                  {watchName?.trim() || "Category Name"}
-                </Text>
-                <Text style={styles.previewColorName}>
-                  {COLOR_NAMES[selectedColor] ?? selectedColor}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.previewBadge,
-                  {
-                    backgroundColor: `${selectedColor}20`,
-                    borderColor: `${selectedColor}40`,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.previewBadgeText, { color: selectedColor }]}
-                >
-                  PREVIEW
-                </Text>
-              </View>
+              style={[
+                styles.previewIcon,
+                { backgroundColor: `${selectedColor}1F` },
+              ]}
+            >
+              <Text style={[styles.previewIconLetter, { color: selectedColor }]}>
+                {(watchName?.trim() || "C").charAt(0).toUpperCase()}
+              </Text>
             </View>
+            <View style={styles.previewInfo}>
+              <Text style={styles.previewName} numberOfLines={1}>
+                {watchName?.trim() || "Category Name"}
+              </Text>
+              <Text style={styles.previewColorName}>
+                {COLOR_NAMES[selectedColor] ?? selectedColor}
+              </Text>
+            </View>
+            <Text style={styles.previewBadgeText}>PREVIEW</Text>
           </Animated.View>
 
           {/* Name Input */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Feather name="type" size={13} color={Colors.primary} />
-              <Text style={styles.sectionLabel}>NAME</Text>
+              <Text style={styles.sectionLabel}>Name</Text>
             </View>
             <Controller
               control={control}
@@ -328,26 +304,15 @@ export const AddCategoryScreen: React.FC<Props> = ({ navigation }) => {
           {/* Color Picker */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Feather name="droplet" size={13} color={Colors.primary} />
-              <Text style={styles.sectionLabel}>COLOUR</Text>
-              <View
-                style={[
-                  styles.selectedColorBadge,
-                  {
-                    backgroundColor: `${selectedColor}20`,
-                    borderColor: `${selectedColor}40`,
-                  },
-                ]}
-              >
+              <Text style={styles.sectionLabel}>Colour</Text>
+              <View style={styles.selectedColorBadge}>
                 <View
                   style={[
                     styles.selectedColorDot,
                     { backgroundColor: selectedColor },
                   ]}
                 />
-                <Text
-                  style={[styles.selectedColorName, { color: selectedColor }]}
-                >
+                <Text style={styles.selectedColorName}>
                   {COLOR_NAMES[selectedColor] ?? selectedColor}
                 </Text>
               </View>
@@ -394,140 +359,138 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.md,
   },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: Colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 0,
   },
   headerCenter: {
     flex: 1,
     alignItems: "center",
   },
   title: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
+    fontSize: 17,
+    fontWeight: "800",
     color: Colors.textPrimary,
     letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: FontSize.xs,
+    fontSize: 11.5,
     color: Colors.textMuted,
     marginTop: 2,
+    fontWeight: "600",
   },
 
   // Preview card
   previewCard: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
+    borderRadius: 22,
     marginBottom: Spacing.lg,
-    overflow: "hidden",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-  },
-  previewAccent: {
-    height: 4,
-    width: "100%",
-  },
-  previewBody: {
+    padding: 16,
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.md,
-    gap: Spacing.md,
+    gap: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 0,
   },
-  previewIconBubble: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.md,
+  previewIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
-  previewIconDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+  previewIconLetter: {
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: -0.3,
   },
   previewInfo: {
     flex: 1,
     gap: 3,
   },
   previewName: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
+    fontSize: 15.5,
+    fontWeight: "700",
     color: Colors.textPrimary,
+    letterSpacing: -0.2,
   },
   previewColorName: {
-    fontSize: FontSize.xs,
+    fontSize: 12,
     color: Colors.textMuted,
-  },
-  previewBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: Radius.full,
-    borderWidth: 1,
+    fontWeight: "600",
   },
   previewBadgeText: {
-    fontSize: 9,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 0.6,
+    fontSize: 9.5,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    color: Colors.textMuted,
   },
 
   // Section
   section: {
     marginBottom: Spacing.md,
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
+    borderRadius: 22,
     padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 0,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginBottom: Spacing.md,
+    justifyContent: "space-between",
+    marginBottom: 14,
   },
   sectionLabel: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.bold,
-    color: Colors.textMuted,
-    letterSpacing: 1,
-    flex: 1,
+    fontSize: 13,
+    fontWeight: "800",
+    color: Colors.textPrimary,
+    letterSpacing: -0.2,
   },
   selectedColorBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingHorizontal: 9,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: Radius.full,
-    borderWidth: 1,
+    borderRadius: 99,
+    backgroundColor: Colors.surfaceElevated,
   },
   selectedColorDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   selectedColorName: {
-    fontSize: 10,
-    fontWeight: FontWeight.semibold,
+    fontSize: 11,
+    fontWeight: "700",
+    color: Colors.textSecondary,
+    letterSpacing: -0.1,
   },
 
   colorGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.sm,
+    gap: 10,
+    justifyContent: "space-between",
   },
 
   spacer: { flex: 1, minHeight: Spacing.xl },

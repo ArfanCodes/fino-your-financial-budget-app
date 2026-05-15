@@ -5,12 +5,13 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   StatusBar,
   Animated,
 } from "react-native";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { FadeIn } from "../../components/FadeIn";
+import { Skeleton } from "../../components/Skeleton";
 import { Feather } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
@@ -42,104 +43,64 @@ const CategoryCard: React.FC<{
   onDelete: (id: string, name: string) => void;
   index: number;
 }> = React.memo(({ item, onDelete, index }) => {
-  const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
+  const translateY = useRef(new Animated.Value(12)).current;
 
   React.useEffect(() => {
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 300,
-        delay: index * 60,
+        duration: 280,
+        delay: index * 50,
         useNativeDriver: true,
       }),
       Animated.spring(translateY, {
         toValue: 0,
-        delay: index * 60,
+        delay: index * 50,
         useNativeDriver: true,
-        tension: 80,
-        friction: 9,
+        tension: 120,
+        friction: 14,
       }),
     ]).start();
   }, []);
-
-  const handlePressIn = () => {
-    Animated.spring(scale, {
-      toValue: 0.96,
-      useNativeDriver: true,
-      tension: 200,
-      friction: 10,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scale, {
-      toValue: 1,
-      useNativeDriver: true,
-      tension: 200,
-      friction: 10,
-    }).start();
-  };
 
   return (
     <Animated.View
       style={[
         cardStyles.card,
-        { opacity, transform: [{ scale }, { translateY }] },
+        { opacity, transform: [{ translateY }] },
       ]}
     >
-      {/* Colored left accent bar */}
-      <View style={[cardStyles.accentBar, { backgroundColor: item.color }]} />
-
-      <View style={cardStyles.body}>
-        {/* Icon bubble */}
-        <View
-          style={[
-            cardStyles.iconBubble,
-            { backgroundColor: `${item.color}22` },
-          ]}
-        >
-          <View style={[cardStyles.iconDot, { backgroundColor: item.color }]}>
-            <View style={cardStyles.iconDotInner} />
-          </View>
-        </View>
-
-        {/* Name */}
-        <Text style={cardStyles.name} numberOfLines={2}>
-          {item.name}
+      <View
+        style={[cardStyles.iconWrap, { backgroundColor: `${item.color}1F` }]}
+      >
+        <Text style={[cardStyles.iconLetter, { color: item.color }]}>
+          {item.name.charAt(0).toUpperCase()}
         </Text>
+      </View>
 
-        {/* Bottom row */}
-        <View style={cardStyles.bottomRow}>
+      <Text style={cardStyles.name} numberOfLines={2}>
+        {item.name}
+      </Text>
+
+      <View style={cardStyles.bottomRow}>
+        <View style={cardStyles.colorPill}>
           <View
-            style={[
-              cardStyles.colorPill,
-              {
-                backgroundColor: `${item.color}20`,
-                borderColor: `${item.color}50`,
-              },
-            ]}
-          >
-            <View
-              style={[cardStyles.colorPillDot, { backgroundColor: item.color }]}
-            />
-            <Text style={[cardStyles.colorPillText, { color: item.color }]}>
-              {item.color.toUpperCase()}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => onDelete(item.id, item.name)}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={cardStyles.deleteBtn}
-            accessibilityLabel={`Delete ${item.name}`}
-          >
-            <Feather name="trash-2" size={13} color={Colors.textMuted} />
-          </TouchableOpacity>
+            style={[cardStyles.colorPillDot, { backgroundColor: item.color }]}
+          />
+          <Text style={cardStyles.colorPillText}>
+            {item.color.toUpperCase()}
+          </Text>
         </View>
+
+        <TouchableOpacity
+          onPress={() => onDelete(item.id, item.name)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={cardStyles.deleteBtn}
+          accessibilityLabel={`Delete ${item.name}`}
+        >
+          <Feather name="trash-2" size={13} color={Colors.textMuted} />
+        </TouchableOpacity>
       </View>
     </Animated.View>
   );
@@ -149,132 +110,88 @@ const cardStyles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
-    overflow: "hidden",
-    elevation: 2,
+    borderRadius: 20,
+    padding: 14,
+    gap: 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
     shadowRadius: 8,
+    elevation: 0,
   },
-  accentBar: {
-    height: 4,
-    width: "100%",
-  },
-  body: {
-    padding: Spacing.md,
-    gap: Spacing.sm,
-  },
-  iconBubble: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.md,
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
-  iconDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconDotInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.5)",
+  iconLetter: {
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: -0.3,
   },
   name: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
+    fontSize: 14.5,
+    fontWeight: "700",
     color: Colors.textPrimary,
-    lineHeight: 20,
+    lineHeight: 19,
+    letterSpacing: -0.2,
   },
   bottomRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 2,
   },
   colorPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 7,
+    gap: 5,
+    paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: Radius.full,
-    borderWidth: 1,
+    borderRadius: 99,
+    backgroundColor: Colors.surfaceElevated,
   },
   colorPillDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
   },
   colorPillText: {
     fontSize: 9,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 0.4,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    color: Colors.textSecondary,
   },
   deleteBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: Colors.surfaceElevated,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
 });
 
 // ─── Empty State ───────────────────────────────────────────────────────────────
-const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => {
-  const pulse = useRef(new Animated.Value(1)).current;
-
-  React.useEffect(() => {
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1.08,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    anim.start();
-    return () => anim.stop();
-  }, []);
-
-  return (
-    <View style={emptyStyles.container}>
-      <Animated.View
-        style={[emptyStyles.iconRing, { transform: [{ scale: pulse }] }]}
-      >
-        <View style={emptyStyles.iconInner}>
-          <Feather name="tag" size={28} color={Colors.primary} />
-        </View>
-      </Animated.View>
-      <Text style={emptyStyles.title}>No categories yet</Text>
-      <Text style={emptyStyles.subtitle}>
-        Create categories to organise{"\n"}your expenses by type
-      </Text>
-      <TouchableOpacity
-        style={emptyStyles.cta}
-        onPress={onAdd}
-        activeOpacity={0.8}
-      >
-        <Feather name="plus" size={16} color={Colors.white} />
-        <Text style={emptyStyles.ctaText}>Create first category</Text>
-      </TouchableOpacity>
+const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
+  <View style={emptyStyles.container}>
+    <View style={emptyStyles.iconWrap}>
+      <Feather name="tag" size={26} color={Colors.accent} />
     </View>
-  );
-};
+    <Text style={emptyStyles.title}>No categories yet</Text>
+    <Text style={emptyStyles.subtitle}>
+      Create categories to organise{"\n"}your expenses by type
+    </Text>
+    <TouchableOpacity
+      style={emptyStyles.cta}
+      onPress={onAdd}
+      activeOpacity={0.85}
+    >
+      <Feather name="plus" size={14} color={Colors.white} />
+      <Text style={emptyStyles.ctaText}>Create category</Text>
+    </TouchableOpacity>
+  </View>
+);
 
 const emptyStyles = StyleSheet.create({
   container: {
@@ -282,60 +199,52 @@ const emptyStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxxl,
-    gap: Spacing.sm,
+    paddingTop: 60,
+    gap: 8,
   },
-  iconRing: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 1.5,
-    borderColor: `${Colors.primary}30`,
+  iconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: Colors.surface,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.sm,
-    backgroundColor: `${Colors.primary}08`,
-  },
-  iconInner: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    backgroundColor: `${Colors.primary}20`,
-    alignItems: "center",
-    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 0,
   },
   title: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
+    fontSize: 18,
+    fontWeight: "800",
     color: Colors.textPrimary,
-    marginTop: Spacing.sm,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: FontSize.sm,
-    color: Colors.textMuted,
+    fontSize: 13.5,
+    color: Colors.textSecondary,
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: 20,
+    fontWeight: "500",
     marginBottom: Spacing.xs,
   },
   cta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.xs,
-    backgroundColor: Colors.primary,
+    gap: 6,
+    backgroundColor: Colors.brandBlack,
     paddingVertical: 12,
-    paddingHorizontal: Spacing.lg,
-    borderRadius: Radius.full,
+    paddingHorizontal: 22,
+    borderRadius: 99,
     marginTop: Spacing.md,
-    elevation: 6,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
   },
   ctaText: {
     color: Colors.white,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: -0.2,
   },
 });
 
@@ -372,7 +281,7 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
       <ConfirmModal
         visible={!!deleteTarget}
@@ -384,6 +293,7 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
         onCancel={() => setDeleteTarget(null)}
       />
 
+      <FadeIn duration={360} style={{ flex: 1 }}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -391,24 +301,23 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={styles.backBtn}
         >
-          <Feather name="arrow-left" size={20} color={Colors.textPrimary} />
+          <Feather name="arrow-left" size={18} color={Colors.textPrimary} />
         </TouchableOpacity>
 
         <View style={styles.titleBlock}>
           <Text style={styles.title}>Categories</Text>
           {categories.length > 0 && (
-            <View style={styles.countBadge}>
-              <Text style={styles.countText}>{categories.length}</Text>
-            </View>
+            <Text style={styles.titleCount}>· {categories.length}</Text>
           )}
         </View>
 
         <TouchableOpacity
           style={styles.addBtn}
           onPress={() => navigation.navigate("AddCategory")}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
-          <Feather name="plus" size={20} color={Colors.white} />
+          <Feather name="plus" size={15} color={Colors.textOnLime} />
+          <Text style={styles.addBtnText}>Add</Text>
         </TouchableOpacity>
       </View>
 
@@ -429,9 +338,18 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* Content */}
       {categoriesLoading && categories.length === 0 ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator color={Colors.primary} size="large" />
-          <Text style={styles.loadingText}>Loading categories...</Text>
+        <View style={[styles.grid, { flex: 1 }]}>
+          {[0, 1, 2, 3].map((row) => (
+            <View key={row} style={styles.row}>
+              {[0, 1].map((col) => (
+                <View key={col} style={skeletonStyles.card}>
+                  <Skeleton width={44} height={44} radius={14} delay={(row * 2 + col) * 70} />
+                  <Skeleton width="70%" height={14} radius={6} delay={(row * 2 + col) * 70 + 40} />
+                  <Skeleton width="45%" height={11} radius={6} delay={(row * 2 + col) * 70 + 70} />
+                </View>
+              ))}
+            </View>
+          ))}
         </View>
       ) : categories.length === 0 ? (
         <EmptyState onAdd={() => navigation.navigate("AddCategory")} />
@@ -445,23 +363,13 @@ export const CategoriesScreen: React.FC<Props> = ({ navigation }) => {
           )}
           contentContainerStyle={[
             styles.grid,
-            { paddingBottom: insets.bottom + 110 },
+            { paddingBottom: insets.bottom + 60 },
           ]}
           columnWrapperStyle={styles.row}
           showsVerticalScrollIndicator={false}
         />
       )}
-
-      {/* FAB */}
-      {categories.length > 0 && (
-        <TouchableOpacity
-          style={[styles.fab, { bottom: insets.bottom + 24 }]}
-          onPress={() => navigation.navigate("AddCategory")}
-          activeOpacity={0.85}
-        >
-          <Feather name="plus" size={24} color={Colors.white} />
-        </TouchableOpacity>
-      )}
+      </FadeIn>
     </SafeAreaView>
   );
 };
@@ -474,6 +382,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.md,
     gap: Spacing.sm,
   },
@@ -481,72 +390,79 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: Colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 0,
   },
   titleBlock: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    marginLeft: Spacing.xs,
+    alignItems: "baseline",
+    gap: 6,
+    marginLeft: 4,
   },
   title: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
+    fontSize: 22,
+    fontWeight: "800",
     color: Colors.textPrimary,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
-  countBadge: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.full,
-    minWidth: 24,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 8,
-  },
-  countText: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
+  titleCount: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.textMuted,
   },
   addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primary,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    elevation: 4,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    gap: 5,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 99,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 0,
+  },
+  addBtnText: {
+    color: Colors.textOnLime,
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: -0.2,
   },
 
   subtitle: {
-    fontSize: FontSize.xs,
+    fontSize: 12,
     color: Colors.textMuted,
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
-    letterSpacing: 0.2,
+    fontWeight: "600",
   },
 
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.xs,
-    backgroundColor: `${Colors.danger}15`,
-    borderRadius: Radius.sm,
+    gap: 8,
+    backgroundColor: `${Colors.danger}12`,
+    borderRadius: 14,
     marginHorizontal: Spacing.lg,
-    padding: Spacing.sm,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     marginBottom: Spacing.sm,
   },
-  errorText: { color: Colors.danger, fontSize: FontSize.sm, flex: 1 },
+  errorText: {
+    color: Colors.danger,
+    fontSize: 13,
+    fontWeight: "600",
+    flex: 1,
+  },
 
   loaderContainer: {
     flex: 1,
@@ -555,32 +471,33 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   loadingText: {
-    fontSize: FontSize.sm,
+    fontSize: 13,
     color: Colors.textMuted,
+    fontWeight: "600",
   },
 
   grid: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xs,
+    paddingTop: 4,
   },
   row: {
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+    gap: 10,
+    marginBottom: 10,
+    flexDirection: "row",
   },
+});
 
-  fab: {
-    position: "absolute",
-    right: Spacing.lg,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: Colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 10,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
+const skeletonStyles = StyleSheet.create({
+  card: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: 14,
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 0,
   },
 });

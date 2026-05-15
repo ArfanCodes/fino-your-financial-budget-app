@@ -83,7 +83,7 @@ export const Button: React.FC<ButtonProps> = ({
       >
         {isLoading ? (
           <ActivityIndicator
-            color={variant === 'secondary' || variant === 'ghost' ? Colors.primary : Colors.white}
+            color={variant === 'secondary' || variant === 'ghost' ? Colors.accent : Colors.white}
             size="small"
           />
         ) : (
@@ -110,18 +110,18 @@ const styles = StyleSheet.create({
   base: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radius.md,
+    borderRadius: 99,
     flexDirection: 'row',
   },
 
   // Variants
   variant_primary: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.brandBlack,
   },
   variant_secondary: {
     backgroundColor: Colors.transparent,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: Colors.accent,
   },
   variant_ghost: {
     backgroundColor: Colors.transparent,
@@ -139,11 +139,11 @@ const styles = StyleSheet.create({
 
   // Labels
   label: {
-    fontWeight: FontWeight.semibold,
-    letterSpacing: 0.3,
+    fontWeight: '700',
+    letterSpacing: -0.1,
   },
   labelVariant_primary: { color: Colors.white },
-  labelVariant_secondary: { color: Colors.primary },
+  labelVariant_secondary: { color: Colors.accent },
   labelVariant_ghost: { color: Colors.textSecondary },
   labelVariant_danger: { color: Colors.white },
 

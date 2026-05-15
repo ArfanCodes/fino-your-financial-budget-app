@@ -46,7 +46,10 @@ const AppShell: React.FC = () => {
 // ─── Root export ───────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0d0101' }}>
+    // Use the brand background so the very first paint (before any RN
+    // content renders) matches the splash — eliminates the brief dark
+    // flash on cold boot.
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.background }}>
       <SafeAreaProvider>
         <EmergencyModeProvider>
           <AppShell />

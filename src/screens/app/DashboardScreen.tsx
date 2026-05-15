@@ -37,6 +37,11 @@ import {
 } from "../../utils/constants";
 import { formatCurrency, formatDate, getInitials } from "../../utils/helpers";
 import { BudgetAlertBanner } from "../../components/BudgetAlertBanner";
+import { FadeIn } from "../../components/FadeIn";
+import {
+  TransactionRowSkeleton,
+  StatPillsSkeleton,
+} from "../../components/Skeleton";
 import { useBudgetStatus } from "../../hooks/useBudgetStatus";
 import { CategoryChip } from "../../components/CategoryChip";
 import { useEmergencyMode } from "../../context/EmergencyModeContext";
@@ -186,33 +191,33 @@ interface TransactionRowProps {
   index: number;
 }
 
-// ─── Transaction Row (card-style, left accent stripe) ──────────────────────────
+// ─── Transaction Row (premium minimal — white card, no stripe) ────────────────
 const TransactionRow: React.FC<TransactionRowProps> = React.memo(
   ({ item, catName, catColor, index }) => {
-    const translateY = useRef(new Animated.Value(16)).current;
+    const translateY = useRef(new Animated.Value(12)).current;
     const opacity = useRef(new Animated.Value(0)).current;
 
     React.useEffect(() => {
       Animated.parallel([
         Animated.timing(opacity, {
           toValue: 1,
-          duration: 300,
-          delay: index * 60,
+          duration: 280,
+          delay: index * 50,
           useNativeDriver: true,
         }),
         Animated.spring(translateY, {
           toValue: 0,
-          delay: index * 60,
+          delay: index * 50,
           useNativeDriver: true,
           tension: 120,
-          friction: 12,
+          friction: 14,
         }),
       ]).start();
     }, []);
 
-    const paymentLabel = getPaymentMethodLabel(item.payment_method);
-    // First letter of category for the square badge
-    const initial = catName.charAt(0).toUpperCase();
+    const paymentLabel = getPaymentMethodLabel(item.payment_method).toUpperCase();
+    const primaryLabel = item.note?.trim() || catName;
+    const initial = primaryLabel.charAt(0).toUpperCase();
 
     return (
       <Animated.View
@@ -221,14 +226,11 @@ const TransactionRow: React.FC<TransactionRowProps> = React.memo(
           { opacity, transform: [{ translateY }] },
         ]}
       >
-        {/* ── Left accent stripe ── */}
-        <View style={[rowStyles.stripe, { backgroundColor: catColor }]} />
-
-        {/* ── Square letter badge ── */}
+        {/* ── Square tinted icon (uses category color, very subtle) ── */}
         <View
           style={[
             rowStyles.badge,
-            { backgroundColor: `${catColor}22`, borderColor: `${catColor}40` },
+            { backgroundColor: `${catColor}1F` },
           ]}
         >
           <Text style={[rowStyles.badgeLetter, { color: catColor }]}>
@@ -239,36 +241,22 @@ const TransactionRow: React.FC<TransactionRowProps> = React.memo(
         {/* ── Info block ── */}
         <View style={rowStyles.info}>
           <Text style={rowStyles.name} numberOfLines={1}>
-            {catName}
+            {primaryLabel}
           </Text>
-          <View style={rowStyles.metaRow}>
-            <Text style={rowStyles.date}>{formatDate(item.date, true)}</Text>
-            {item.note ? (
-              <>
-                <Text style={rowStyles.metaDot}>·</Text>
-                <Text style={rowStyles.note} numberOfLines={1}>
-                  {item.note}
-                </Text>
-              </>
-            ) : null}
-          </View>
+          <Text style={rowStyles.meta} numberOfLines={1}>
+            {formatDate(item.date, true)}
+            {item.note && primaryLabel !== item.note ? ` · ${catName}` : ""}
+          </Text>
         </View>
 
-        {/* ── Right side: amount + method tag ── */}
+        {/* ── Right side: amount + small uppercase method label ── */}
         <View style={rowStyles.right}>
-          <Text style={[rowStyles.amount, { color: catColor }]} numberOfLines={1}>
-            {formatCurrency(item.amount)}
+          <Text style={rowStyles.amount} numberOfLines={1}>
+            -{formatCurrency(item.amount)}
           </Text>
-          <View
-            style={[
-              rowStyles.methodTag,
-              { backgroundColor: `${catColor}18`, borderColor: `${catColor}35` },
-            ]}
-          >
-            <Text style={[rowStyles.methodText, { color: catColor }]}>
-              {paymentLabel}
-            </Text>
-          </View>
+          <Text style={rowStyles.methodText} numberOfLines={1}>
+            {paymentLabel}
+          </Text>
         </View>
       </Animated.View>
     );
@@ -278,103 +266,72 @@ const TransactionRow: React.FC<TransactionRowProps> = React.memo(
 TransactionRow.displayName = "TransactionRow";
 
 const rowStyles = StyleSheet.create({
-  // ── Floating card ──────────────────────────────────────────────────────────
   card: {
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: H_PAD,
     marginBottom: 10,
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
-    overflow: "hidden",
+    borderRadius: 18,
     paddingVertical: 14,
-    paddingRight: Spacing.md,
-    gap: 12,
+    paddingHorizontal: 14,
+    gap: 14,
+
+    // Soft directional iOS shadow (no Android elevation — it halos the edges)
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 0,
   },
 
-  // ── Left accent stripe (4 px, full card height via overflow:hidden) ────────
-  stripe: {
-    width: 4,
-    alignSelf: "stretch",
-    borderRadius: 0,
-    flexShrink: 0,
-  },
-
-  // ── Category letter square badge ──────────────────────────────────────────
+  // Rounded-square category icon
   badge: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    borderWidth: 1,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
   badgeLetter: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    letterSpacing: -0.5,
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: -0.3,
   },
 
-  // ── Text content ──────────────────────────────────────────────────────────
   info: {
     flex: 1,
-    gap: 4,
+    gap: 3,
   },
   name: {
-    fontSize: FontSize.md,
+    fontSize: 15.5,
     color: Colors.textPrimary,
-    fontWeight: FontWeight.semibold,
+    fontWeight: "700",
     letterSpacing: -0.2,
   },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  date: {
-    fontSize: FontSize.sm,
+  meta: {
+    fontSize: 12.5,
     color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
-  },
-  metaDot: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginHorizontal: 5,
-  },
-  note: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    flex: 1,
+    fontWeight: "500",
   },
 
-  // ── Right side ────────────────────────────────────────────────────────────
   right: {
     alignItems: "flex-end",
-    gap: 5,
+    gap: 3,
     flexShrink: 0,
   },
   amount: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
+    fontSize: 15.5,
+    fontWeight: "700",
+    color: Colors.danger,
     letterSpacing: -0.3,
-  },
-  methodTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
   },
   methodText: {
     fontSize: 10,
-    fontWeight: FontWeight.semibold,
-    letterSpacing: 0.3,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    color: Colors.textMuted,
   },
 });
 
@@ -531,107 +488,6 @@ const qaStyles = StyleSheet.create({
   },
 });
 
-// ─── Category Bar ──────────────────────────────────────────────────────────────
-const CategoryBar: React.FC<{
-  name: string;
-  color: string;
-  amount: number;
-  total: number;
-  index: number;
-}> = ({ name, color, amount, total, index }) => {
-  const widthAnim = useRef(new Animated.Value(0)).current;
-  const pct = total > 0 ? amount / total : 0;
-
-  React.useEffect(() => {
-    Animated.timing(widthAnim, {
-      toValue: pct,
-      duration: 600,
-      delay: index * 80 + 200,
-      useNativeDriver: false,
-    }).start();
-  }, [pct]);
-
-  return (
-    <View style={catBarStyles.row}>
-      <View style={[catBarStyles.dot, { backgroundColor: color }]} />
-      <View style={catBarStyles.info}>
-        <View style={catBarStyles.labelRow}>
-          <Text style={catBarStyles.name} numberOfLines={1}>
-            {name}
-          </Text>
-          <Text style={catBarStyles.amount}>{formatCurrency(amount)}</Text>
-        </View>
-        <View style={catBarStyles.track}>
-          <Animated.View
-            style={[
-              catBarStyles.fill,
-              {
-                backgroundColor: color,
-                width: widthAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["0%", "100%"],
-                }),
-              },
-            ]}
-          />
-        </View>
-      </View>
-      <Text style={catBarStyles.pct}>{Math.round(pct * 100)}%</Text>
-    </View>
-  );
-};
-
-const catBarStyles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    marginBottom: 16,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    flexShrink: 0,
-  },
-  info: { flex: 1, gap: 6 },
-  labelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  name: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    fontWeight: FontWeight.semibold,
-    flex: 1,
-    marginRight: 8,
-  },
-  amount: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    fontWeight: FontWeight.bold,
-  },
-  track: {
-    height: 8,
-    backgroundColor: `${Colors.surfaceBorder}50`,
-    borderRadius: Radius.full,
-    overflow: "hidden",
-  },
-  fill: {
-    height: "100%",
-    borderRadius: Radius.full,
-  },
-  pct: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    fontWeight: FontWeight.semibold,
-    width: 36,
-    textAlign: "right",
-    flexShrink: 0,
-  },
-});
-
 // ─── Spending Graph ────────────────────────────────────────────────────────────
 const BAR_MAX_H = 64;
 
@@ -660,12 +516,12 @@ const SpendingBarItem: React.FC<SpendingBarItemProps> = ({
           style={{
             width: "100%",
             height: barH,
-            borderRadius: 5,
+            borderRadius: 6,
             backgroundColor: isToday
-              ? Colors.primary
+              ? Colors.accent
               : amount > 0
-                ? `${Colors.primary}66`
-                : `${Colors.primary}20`,
+                ? `${Colors.accent}55`
+                : `${Colors.surfaceElevated}`,
           }}
         />
       </View>
@@ -680,14 +536,12 @@ const sgStyles = StyleSheet.create({
   wrapper: {
     marginTop: Spacing.md,
     paddingTop: Spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.surfaceBorder,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 14,
   },
   titleRow: {
     flexDirection: "row",
@@ -695,15 +549,15 @@ const sgStyles = StyleSheet.create({
     gap: 5,
   },
   title: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
+    fontSize: 16,
+    fontWeight: "800",
     color: Colors.textPrimary,
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   sub: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
+    fontSize: 12,
+    color: Colors.textMuted,
+    fontWeight: "600",
   },
   chart: {
     flexDirection: "row",
@@ -758,34 +612,6 @@ export const DashboardScreen: React.FC = () => {
     categories.forEach((c) => m.set(c.id, { name: c.name, color: c.color }));
     return m;
   }, [categories]);
-
-  // ── Top categories by spend (current month) ──────────────────────────────
-  const topCategories = useMemo(() => {
-    const now = new Date();
-    const curYear = now.getFullYear();
-    const curMonth = now.getMonth();
-    const map = new Map<string, number>();
-    expenses.forEach((e) => {
-      const d = new Date(e.date);
-      if (d.getFullYear() === curYear && d.getMonth() === curMonth) {
-        map.set(
-          e.category_id,
-          (map.get(e.category_id) ?? 0) + Number(e.amount),
-        );
-      }
-    });
-    return Array.from(map.entries())
-      .map(([id, amount]) => ({
-        id,
-        amount,
-        ...(categoryMap.get(id) ?? {
-          name: "Uncategorized",
-          color: Colors.surfaceBorder,
-        }),
-      }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 4);
-  }, [expenses, categoryMap]);
 
   // ── Last 7 days spending (for bar chart) ──────────────────────────────────
   const weeklyData = useMemo(() => {
@@ -915,21 +741,32 @@ export const DashboardScreen: React.FC = () => {
   const listHeader = useMemo(
     () => (
       <View style={styles.headerWrapper}>
-        {/* ── Hero Spending Card ───────────────────────────────────────── */}
+        {/* ── Hero Spending Card (lime) ─────────────────────────────────── */}
         <View style={styles.heroCard}>
-          {/* Decorative orbs */}
-          <View style={styles.heroOrb} />
-          <View style={styles.heroOrb2} />
-
-          <Text style={styles.heroLabel}>
-            {monthName.toUpperCase()} {year} · TOTAL SPENT
-          </Text>
+          <View style={styles.heroLabelRow}>
+            <Text style={styles.heroLabel}>
+              {monthName.toUpperCase()} {year}
+            </Text>
+            {diffPct !== null && (
+              <View style={styles.diffBadge}>
+                <Feather
+                  name={diffPct > 0 ? "trending-up" : "trending-down"}
+                  size={11}
+                  color={Colors.textOnLime}
+                />
+                <Text style={styles.diffText}>
+                  {diffPct > 0 ? "+" : "-"}
+                  {Math.abs(diffPct).toFixed(1)}%
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.heroSubLabel}>Total spent this month</Text>
           <Text style={styles.heroAmount}>{formatCurrency(monthTotal)}</Text>
 
           {/* ── Inline budget progress (same data as Budget screen) ── */}
           {budgetStatus.hasBudget && (
             <View style={styles.heroBudgetRow}>
-              {/* bar */}
               <View style={styles.heroBudgetTrack}>
                 <View
                   style={[
@@ -941,29 +778,16 @@ export const DashboardScreen: React.FC = () => {
                           ? Colors.danger
                           : budgetStatus.state === "warning"
                             ? Colors.warning
-                            : Colors.success,
+                            : Colors.accent,
                     },
                   ]}
                 />
               </View>
-              {/* labels */}
               <View style={styles.heroBudgetLabels}>
                 <Text style={styles.heroBudgetLeft}>
                   of {formatCurrency(budgetStatus.totalLimit)} budget
                 </Text>
-                <Text
-                  style={[
-                    styles.heroBudgetRight,
-                    {
-                      color:
-                        budgetStatus.state === "emergency"
-                          ? Colors.danger
-                          : budgetStatus.state === "warning"
-                            ? Colors.warning
-                            : Colors.success,
-                    },
-                  ]}
-                >
+                <Text style={styles.heroBudgetRight}>
                   {budgetStatus.state === "emergency"
                     ? `${formatCurrency(budgetStatus.overBudgetAmount)} over`
                     : `${formatCurrency(budgetStatus.remainingBudget)} left`}
@@ -972,170 +796,133 @@ export const DashboardScreen: React.FC = () => {
             </View>
           )}
 
-          {diffPct !== null && (
-            <View style={styles.diffRow}>
-              <View
-                style={[
-                  styles.diffBadge,
-                  {
-                    backgroundColor:
-                      diffPct > 0
-                        ? `${Colors.danger}20`
-                        : `${Colors.success}20`,
-                    borderColor:
-                      diffPct > 0
-                        ? `${Colors.danger}40`
-                        : `${Colors.success}40`,
-                  },
-                ]}
-              >
-                <Feather
-                  name={diffPct > 0 ? "trending-up" : "trending-down"}
-                  size={12}
-                  color={diffPct > 0 ? Colors.danger : Colors.success}
-                />
-                <Text
-                  style={[
-                    styles.diffText,
-                    { color: diffPct > 0 ? Colors.danger : Colors.success },
-                  ]}
-                >
-                  {Math.abs(diffPct).toFixed(1)}% vs last month
-                </Text>
-              </View>
-            </View>
-          )}
+        </View>
 
-          {/* ── Budget Exceeded Banner (inside card) ──────────────── */}
-          {budgetStatus.state !== "safe" && (
-            <TouchableOpacity
+        {/* ── Stats Pills Row ─────────────────────────────────────── */}
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}>
+            <Text style={styles.statValue}>{expenses.length}</Text>
+            <Text style={styles.statLabel}>Transactions</Text>
+          </View>
+          <View style={styles.statPill}>
+            <Text style={styles.statValue}>{categories.length}</Text>
+            <Text style={styles.statLabel}>Categories</Text>
+          </View>
+          <View style={styles.statPill}>
+            <Text style={styles.statValue}>
+              {expenses.length > 0
+                ? formatCurrency(
+                    monthTotal /
+                      Math.max(
+                        expenses.filter((e) => {
+                          const d = new Date(e.date);
+                          return (
+                            d.getMonth() === now.getMonth() &&
+                            d.getFullYear() === now.getFullYear()
+                          );
+                        }).length,
+                        1,
+                      ),
+                  )
+                : "—"}
+            </Text>
+            <Text style={styles.statLabel}>Avg. Expense</Text>
+          </View>
+        </View>
+
+        {/* ── Budget Exceeded / Warning Banner ─────────────────────── */}
+        {budgetStatus.state !== "safe" && (
+          <TouchableOpacity
+            style={[
+              inCardStyles.budgetBanner,
+              budgetStatus.state === "emergency"
+                ? inCardStyles.budgetBannerDanger
+                : inCardStyles.budgetBannerWarning,
+            ]}
+            onPress={navigateToRecovery}
+            activeOpacity={0.8}
+          >
+            <View
               style={[
-                inCardStyles.budgetBanner,
-                budgetStatus.state === "emergency"
-                  ? inCardStyles.budgetBannerDanger
-                  : inCardStyles.budgetBannerWarning,
+                inCardStyles.budgetIconWrap,
+                {
+                  backgroundColor:
+                    budgetStatus.state === "emergency"
+                      ? `${Colors.danger}25`
+                      : `${Colors.warning}25`,
+                },
               ]}
-              onPress={navigateToRecovery}
-              activeOpacity={0.8}
             >
-              <View
-                style={[
-                  inCardStyles.budgetIconWrap,
-                  {
-                    backgroundColor:
-                      budgetStatus.state === "emergency"
-                        ? `${Colors.danger}25`
-                        : `${Colors.warning}25`,
-                  },
-                ]}
-              >
-                <Feather
-                  name={
-                    budgetStatus.state === "emergency"
-                      ? "alert-triangle"
-                      : "alert-circle"
-                  }
-                  size={18}
-                  color={
-                    budgetStatus.state === "emergency"
-                      ? Colors.danger
-                      : Colors.warning
-                  }
-                />
-              </View>
-              <View style={inCardStyles.budgetText}>
-                <Text
-                  style={[
-                    inCardStyles.budgetTitle,
-                    {
-                      color:
-                        budgetStatus.state === "emergency"
-                          ? Colors.danger
-                          : Colors.warning,
-                    },
-                  ]}
-                >
-                  {budgetStatus.state === "emergency"
-                    ? "⚠ Budget Exceeded"
-                    : "Approaching Budget Limit"}
-                </Text>
-                <Text style={inCardStyles.budgetSub}>
-                  {budgetStatus.state === "emergency"
-                    ? `${formatCurrency(budgetStatus.overBudgetAmount)} over budget — tap to view plan`
-                    : `${formatCurrency(budgetStatus.remainingBudget)} remaining this month`}
-                </Text>
-              </View>
               <Feather
-                name="chevron-right"
-                size={16}
+                name={
+                  budgetStatus.state === "emergency"
+                    ? "alert-triangle"
+                    : "alert-circle"
+                }
+                size={18}
                 color={
                   budgetStatus.state === "emergency"
                     ? Colors.danger
                     : Colors.warning
                 }
               />
-            </TouchableOpacity>
-          )}
-
-          {/* ── Enter Emergency Mode (inside card, above chart) ───── */}
-          {budgetStatus.state !== "safe" && !isEmergencyModeActive && (
-            <EmergencyModeCard onPress={handleEnterEmergency} />
-          )}
-
-          {/* ── 7-Day Spending Graph ───────────────────────────────── */}
-          <View style={sgStyles.wrapper}>
-            <View style={sgStyles.header}>
-              <View style={sgStyles.titleRow}>
-                <Feather name="bar-chart-2" size={15} color={Colors.primary} />
-                <Text style={sgStyles.title}>7-Day Spending</Text>
-              </View>
-              <Text style={sgStyles.sub}>Last 7 days</Text>
             </View>
-            <View style={sgStyles.chart}>
-              {weeklyData.map((day, i) => (
-                <SpendingBarItem
-                  key={day.dateStr}
-                  amount={day.amount}
-                  maxAmount={Math.max(...weeklyData.map((d) => d.amount), 1)}
-                  label={day.label}
-                  isToday={day.isToday}
-                  index={i}
-                />
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.heroStats}>
-            <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatValue}>{expenses.length}</Text>
-              <Text style={styles.heroStatLabel}>Transactions</Text>
-            </View>
-            <View style={styles.heroStatDivider} />
-            <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatValue}>{categories.length}</Text>
-              <Text style={styles.heroStatLabel}>Categories</Text>
-            </View>
-            <View style={styles.heroStatDivider} />
-            <View style={styles.heroStatItem}>
-              <Text style={styles.heroStatValue}>
-                {expenses.length > 0
-                  ? formatCurrency(
-                      monthTotal /
-                        Math.max(
-                          expenses.filter((e) => {
-                            const d = new Date(e.date);
-                            return (
-                              d.getMonth() === now.getMonth() &&
-                              d.getFullYear() === now.getFullYear()
-                            );
-                          }).length,
-                          1,
-                        ),
-                    )
-                  : "—"}
+            <View style={inCardStyles.budgetText}>
+              <Text
+                style={[
+                  inCardStyles.budgetTitle,
+                  {
+                    color:
+                      budgetStatus.state === "emergency"
+                        ? Colors.danger
+                        : Colors.warning,
+                  },
+                ]}
+              >
+                {budgetStatus.state === "emergency"
+                  ? "Budget Exceeded"
+                  : "Approaching Budget Limit"}
               </Text>
-              <Text style={styles.heroStatLabel}>Avg. Expense</Text>
+              <Text style={inCardStyles.budgetSub}>
+                {budgetStatus.state === "emergency"
+                  ? `${formatCurrency(budgetStatus.overBudgetAmount)} over budget — tap to view plan`
+                  : `${formatCurrency(budgetStatus.remainingBudget)} remaining this month`}
+              </Text>
             </View>
+            <Feather
+              name="chevron-right"
+              size={16}
+              color={
+                budgetStatus.state === "emergency"
+                  ? Colors.danger
+                  : Colors.warning
+              }
+            />
+          </TouchableOpacity>
+        )}
+
+        {/* ── Enter Emergency Mode ───────────────────────────────── */}
+        {budgetStatus.state !== "safe" && !isEmergencyModeActive && (
+          <EmergencyModeCard onPress={handleEnterEmergency} />
+        )}
+
+        {/* ── 7-Day Spending Graph (separate white card) ────────── */}
+        <View style={styles.chartCard}>
+          <View style={sgStyles.header}>
+            <Text style={sgStyles.title}>7-Day Spending</Text>
+            <Text style={sgStyles.sub}>Last 7 days</Text>
+          </View>
+          <View style={sgStyles.chart}>
+            {weeklyData.map((day, i) => (
+              <SpendingBarItem
+                key={day.dateStr}
+                amount={day.amount}
+                maxAmount={Math.max(...weeklyData.map((d) => d.amount), 1)}
+                label={day.label}
+                isToday={day.isToday}
+                index={i}
+              />
+            ))}
           </View>
         </View>
 
@@ -1154,18 +941,15 @@ export const DashboardScreen: React.FC = () => {
           </TouchableOpacity>
         )}
 
-        {/* ── Recent Section Header ─────────────────────────────────────── */}
+        {/* ── Transactions Section Header ───────────────────────────────── */}
         <View style={styles.recentHeader}>
-          <View style={styles.sectionTitleRow}>
-            <Feather name="clock" size={15} color={Colors.primary} />
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          </View>
+          <Text style={styles.recentTitle}>Transactions</Text>
           <TouchableOpacity
             onPress={() => (navigation as any).navigate("TransactionsTab")}
             activeOpacity={0.65}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.seeAll}>See All</Text>
+            <Text style={styles.seeAll}>See all</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1194,61 +978,29 @@ export const DashboardScreen: React.FC = () => {
     ],
   );
 
-  // ── List footer: Top Categories ─────────────────────────────────────────
-  const listFooter = useMemo(
-    () =>
-      topCategories.length > 0 ? (
-        <View
-          style={[
-            styles.section,
-            { marginHorizontal: H_PAD, marginTop: Spacing.md },
-          ]}
-        >
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Feather name="pie-chart" size={15} color={Colors.primary} />
-              <Text style={styles.sectionTitle}>Top Categories</Text>
-            </View>
-            <Text style={styles.sectionSub}>This month</Text>
-          </View>
-          {topCategories.map((cat, i) => (
-            <CategoryBar
-              key={cat.id}
-              name={cat.name}
-              color={cat.color}
-              amount={cat.amount}
-              total={monthTotal}
-              index={i}
-            />
-          ))}
-        </View>
-      ) : null,
-    [topCategories, monthTotal],
-  );
-
-  // Account for tab bar height + tab bar bottom offset + padding
-  const fabBottom = Math.max(insets.bottom, 16) + TAB_BAR_HEIGHT + 16;
-
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
+      <FadeIn duration={360} style={{ flex: 1 }}>
       <View style={styles.headerShell}>
         <View style={styles.topBar}>
-          <View style={styles.greetingBlock}>
-            <Text style={styles.greetingSmall}>{greeting}</Text>
-            <Text style={styles.greetingName} numberOfLines={1}>
-              {displayName}
-            </Text>
-          </View>
           <TouchableOpacity
-            style={styles.avatar}
-            onPress={() => navigation.navigate("Settings")}
+            style={styles.avatarRing}
+            onPress={() => navigation.getParent()?.navigate("SettingsTab" as never)}
             activeOpacity={0.75}
             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           >
-            <Text style={styles.avatarText}>{initials}</Text>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
           </TouchableOpacity>
+          <View style={styles.greetingBlock}>
+            <Text style={styles.brandName} numberOfLines={1}>FinPulse</Text>
+            <Text style={styles.greetingSmall} numberOfLines={1}>
+              {greeting}, {displayName}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -1257,8 +1009,17 @@ export const DashboardScreen: React.FC = () => {
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         ListHeaderComponent={listHeader}
-        ListFooterComponent={listFooter}
-        ListEmptyComponent={<EmptyTransactions onAdd={navigateToAddExpense} />}
+        ListEmptyComponent={
+          expensesLoading && recentExpenses.length === 0 ? (
+            <View style={{ paddingHorizontal: H_PAD }}>
+              {[0, 1, 2].map((i) => (
+                <TransactionRowSkeleton key={i} index={i} />
+              ))}
+            </View>
+          ) : (
+            <EmptyTransactions onAdd={navigateToAddExpense} />
+          )
+        }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.listContent,
@@ -1275,8 +1036,7 @@ export const DashboardScreen: React.FC = () => {
         extraData={categoryMap}
         removeClippedSubviews={Platform.OS === "android"}
       />
-
-      />
+      </FadeIn>
     </SafeAreaView>
   );
 };
@@ -1304,19 +1064,48 @@ const styles = StyleSheet.create({
   // ── Top Bar ──────────────────────────────────────────────────────────────────
   topBar: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: 12,
     marginBottom: Spacing.xs,
+  },
+  avatarRing: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.surface,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: {
+    color: Colors.white,
+    fontWeight: "700",
+    fontSize: 14,
+    letterSpacing: 0.5,
   },
   greetingBlock: {
     flex: 1,
-    marginRight: Spacing.md,
+  },
+  brandName: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: Colors.textPrimary,
+    letterSpacing: -0.5,
   },
   greetingSmall: {
-    fontSize: FontSize.lg,
+    fontSize: 13,
     color: Colors.textSecondary,
-    marginBottom: 3,
-    letterSpacing: 0.2,
+    marginTop: 1,
+    fontWeight: "500",
   },
   greetingName: {
     fontSize: FontSize.xxl,
@@ -1325,79 +1114,56 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     textTransform: "capitalize",
   },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.primaryDark,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2.5,
-    borderColor: Colors.primary,
-  },
-  avatarText: {
-    color: Colors.white,
-    fontWeight: FontWeight.bold,
-    fontSize: FontSize.md,
-    letterSpacing: 0.5,
-  },
 
-  // ── Hero Card ────────────────────────────────────────────────────────────────
+  // ── Hero Card (lime green premium) ───────────────────────────────────────────
   heroCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.primary,
+    borderRadius: 26,
+    paddingVertical: 20,
+    paddingHorizontal: 22,
     marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
-    overflow: "hidden",
-    elevation: 4,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 0,
   },
-  heroOrb: {
-    position: "absolute",
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: `${Colors.primary}12`,
-    top: -80,
-    right: -60,
-  },
-  heroOrb2: {
-    position: "absolute",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: `${Colors.accent}0A`,
-    bottom: -30,
-    left: -20,
+  heroLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
   },
   heroLabel: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.bold,
+    fontSize: 11,
+    color: Colors.textOnLime,
+    fontWeight: "700",
     letterSpacing: 1.4,
-    marginBottom: Spacing.xs,
+    opacity: 0.75,
+  },
+  heroSubLabel: {
+    fontSize: 13,
+    color: Colors.textOnLime,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+    marginBottom: 6,
   },
   heroAmount: {
-    fontSize: 44,
-    fontWeight: FontWeight.extrabold,
-    color: Colors.textPrimary,
-    letterSpacing: -2,
+    fontSize: 40,
+    fontWeight: "800",
+    color: Colors.textOnLime,
+    letterSpacing: -1.5,
     marginBottom: 4,
   },
   // ── Inline budget progress bar inside hero card ──────────────────────────
   heroBudgetRow: {
+    marginTop: 6,
     marginBottom: Spacing.sm,
     gap: 6,
   },
   heroBudgetTrack: {
-    height: 5,
-    backgroundColor: `${Colors.surfaceBorder}60`,
+    height: 6,
+    backgroundColor: "rgba(15,17,21,0.18)",
     borderRadius: 99,
     overflow: "hidden",
   },
@@ -1411,13 +1177,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   heroBudgetLeft: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    fontWeight: FontWeight.medium,
+    fontSize: 11,
+    color: Colors.textOnLime,
+    opacity: 0.7,
+    fontWeight: "600",
   },
   heroBudgetRight: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.bold,
+    fontSize: 11,
+    fontWeight: "700",
+    color: Colors.textOnLime,
   },
   diffRow: {
     marginBottom: Spacing.md,
@@ -1430,42 +1198,58 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: Radius.full,
-    borderWidth: 1,
+    backgroundColor: "rgba(255,255,255,0.4)",
   },
   diffText: {
     fontSize: 11,
-    fontWeight: FontWeight.semibold,
+    fontWeight: "700",
+    color: Colors.textOnLime,
+    letterSpacing: -0.1,
   },
-  heroStats: {
+  // ── Stats Pills (under hero) ─────────────────────────────────────────────
+  statsRow: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: `${Colors.surfaceBorder}80`,
-    marginTop: Spacing.sm,
+    gap: 10,
+    marginBottom: Spacing.md,
   },
-  heroStatItem: {
+  statPill: {
     flex: 1,
-    alignItems: "center",
-    gap: 4,
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    alignItems: "flex-start",
+    gap: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 0,
   },
-  heroStatDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 36,
-    backgroundColor: Colors.surfaceBorder,
-  },
-  heroStatValue: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
+  statValue: {
+    fontSize: 18,
+    fontWeight: "800",
     color: Colors.textPrimary,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
-  heroStatLabel: {
-    fontSize: FontSize.sm,
+  statLabel: {
+    fontSize: 11,
     color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
-    letterSpacing: 0.4,
-    textTransform: "uppercase",
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+
+  // ── 7-Day Chart Card ─────────────────────────────────────────────────────
+  chartCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 22,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 0,
   },
 
   // ── Quick Actions ─────────────────────────────────────────────────────────────
@@ -1478,11 +1262,14 @@ const styles = StyleSheet.create({
   // ── Section ───────────────────────────────────────────────────────────────────
   section: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
+    borderRadius: 22,
     padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
     marginBottom: Spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 0,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -1496,15 +1283,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   sectionTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
+    fontSize: 16,
+    fontWeight: "800",
     color: Colors.textPrimary,
     letterSpacing: -0.3,
   },
   sectionSub: {
-    fontSize: FontSize.sm,
+    fontSize: 12,
     color: Colors.textMuted,
-    fontWeight: FontWeight.medium,
+    fontWeight: "600",
   },
 
   // ── Recent Header ─────────────────────────────────────────────────────────────
@@ -1512,12 +1299,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: Spacing.lg,
     marginBottom: Spacing.sm,
+    paddingHorizontal: 2,
+  },
+  recentTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: Colors.textPrimary,
+    letterSpacing: -0.5,
   },
   seeAll: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
-    color: Colors.primary,
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.accent,
+    letterSpacing: -0.1,
   },
 
   // ── FAB ───────────────────────────────────────────────────────────────────────

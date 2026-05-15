@@ -19,10 +19,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Animated,
   StatusBar,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { BudgetRowSkeleton } from "../../components/Skeleton";
+import { FadeIn } from "../../components/FadeIn";
 import {
   SafeAreaView,
   useSafeAreaInsets as useInsets,
@@ -37,9 +38,6 @@ import {
 } from "../../store/finance.store";
 import {
   Colors,
-  FontSize,
-  FontWeight,
-  Radius,
   Spacing,
   TAB_BAR_HEIGHT,
 } from "../../utils/constants";
@@ -47,8 +45,6 @@ import { formatCurrency } from "../../utils/helpers";
 import type { Budget, Category } from "../../types";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
-
-/** Returns "YYYY-MM" for the current month */
 function currentMonthKey(): string {
   const now = new Date();
   const y = now.getFullYear();
@@ -56,7 +52,6 @@ function currentMonthKey(): string {
   return `${y}-${m}`;
 }
 
-/** Returns a human-readable label like "March 2026" */
 function formatMonthLabel(monthKey: string): string {
   const [y, m] = monthKey.split("-");
   return new Date(Number(y), Number(m) - 1, 1).toLocaleString("en-IN", {
@@ -65,14 +60,13 @@ function formatMonthLabel(monthKey: string): string {
   });
 }
 
-// ─── Progress bar color based on ratio ────────────────────────────────────────
 function progressColor(ratio: number): string {
   if (ratio >= 1) return Colors.danger;
   if (ratio >= 0.8) return Colors.warning;
-  return Colors.success;
+  return Colors.accent;
 }
 
-// ─── Budget Item Row ───────────────────────────────────────────────────────────
+// ─── Static progress bar (no per-frame Animated cost — eliminates JS-thread jank) ─
 interface BudgetRowProps {
   budget: Budget;
   category: Category | undefined;
@@ -85,184 +79,342 @@ interface BudgetRowProps {
 const BudgetRow: React.FC<BudgetRowProps> = React.memo(
   ({ budget, category, spent, onEdit, onDelete, index }) => {
     const limit = budget.monthly_limit;
-    const remaining = limit - spent;
     const ratio = limit > 0 ? spent / limit : 0;
-    const pctLabel = `${Math.min(Math.round(ratio * 100), 100)}%`;
-    const barColor = progressColor(ratio);
-    const catColor = category?.color ?? Colors.primary;
-
-    const barAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-      Animated.timing(barAnim, {
-        toValue: Math.min(ratio, 1),
-        duration: 600,
-        delay: index * 80,
-        useNativeDriver: false,
-      }).start();
-    }, [ratio]);
+    const pct = Math.min(Math.round(ratio * 100), 100);
+    const catColor = category?.color ?? Colors.accent;
+    const status = progressColor(ratio);
 
     return (
       <View style={rowStyles.card}>
-        {/* Header */}
-        <View style={rowStyles.header}>
-          <View style={rowStyles.labelRow}>
-            <View style={[rowStyles.dot, { backgroundColor: catColor }]} />
-            <Text style={rowStyles.categoryName} numberOfLines={1}>
-              {category?.name ?? "Uncategorized"}
+        <View style={rowStyles.topRow}>
+          <View
+            style={[rowStyles.iconWrap, { backgroundColor: `${catColor}1F` }]}
+          >
+            <Text style={[rowStyles.iconLetter, { color: catColor }]}>
+              {(category?.name ?? "U").charAt(0).toUpperCase()}
             </Text>
           </View>
-          <View style={rowStyles.actions}>
-            <TouchableOpacity
-              onPress={() => onEdit(budget)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={rowStyles.iconBtn}
-            >
-              <Feather name="edit-2" size={13} color={Colors.textMuted} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => onDelete(budget)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={rowStyles.iconBtn}
-            >
-              <Feather name="trash-2" size={13} color={Colors.danger} />
-            </TouchableOpacity>
+
+          <View style={rowStyles.titleBlock}>
+            <Text style={rowStyles.name} numberOfLines={1}>
+              {category?.name ?? "Uncategorized"}
+            </Text>
+            <Text style={rowStyles.goal} numberOfLines={1}>
+              Monthly Goal: {formatCurrency(limit)}
+            </Text>
+          </View>
+
+          <View style={rowStyles.rightBlock}>
+            <Text style={rowStyles.amount} numberOfLines={1}>
+              {formatCurrency(spent)}
+            </Text>
+            <Text style={[rowStyles.pct, { color: status }]}>{pct}%</Text>
           </View>
         </View>
 
-        {/* Progress bar track */}
         <View style={rowStyles.track}>
-          <Animated.View
+          <View
             style={[
               rowStyles.fill,
               {
-                backgroundColor: barColor,
-                width: barAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["0%", "100%"],
-                }),
+                width: `${Math.min(ratio * 100, 100)}%`,
+                backgroundColor: catColor,
               },
             ]}
           />
         </View>
 
-        {/* Stats row */}
-        <View style={rowStyles.statsRow}>
-          <View>
-            <Text style={rowStyles.statsLabel}>Spent</Text>
-            <Text style={[rowStyles.statsValue, { color: barColor }]}>
-              {formatCurrency(spent)}
-            </Text>
-          </View>
-          <View style={{ alignItems: "center" }}>
-            <Text style={rowStyles.statsLabel}>Progress</Text>
-            <Text style={[rowStyles.statsValue, { color: barColor }]}>
-              {pctLabel}
-            </Text>
-          </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={rowStyles.statsLabel}>Remaining</Text>
-            <Text
-              style={[
-                rowStyles.statsValue,
-                { color: remaining < 0 ? Colors.danger : Colors.textPrimary },
-              ]}
-            >
-              {remaining < 0
-                ? `-${formatCurrency(Math.abs(remaining))}`
-                : formatCurrency(remaining)}
-            </Text>
-          </View>
+        <View style={rowStyles.actionsRow}>
+          <TouchableOpacity
+            onPress={() => onEdit(budget)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={rowStyles.actionBtn}
+          >
+            <Feather name="edit-2" size={12} color={Colors.textMuted} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => onDelete(budget)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={rowStyles.actionBtn}
+          >
+            <Feather name="trash-2" size={12} color={Colors.textMuted} />
+          </TouchableOpacity>
         </View>
-
-        {/* Limit row */}
-        <Text style={rowStyles.limitText}>
-          Limit: {formatCurrency(limit)} / month
-        </Text>
       </View>
     );
   },
 );
-
 BudgetRow.displayName = "BudgetRow";
 
 const rowStyles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.surfaceBorder,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.sm,
-  },
-  labelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-    flex: 1,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  categoryName: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
-    color: Colors.textPrimary,
-    flex: 1,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: Spacing.xs,
-  },
-  iconBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: Colors.surfaceElevated,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   track: {
+    width: "100%",
     height: 6,
     backgroundColor: Colors.surfaceElevated,
-    borderRadius: Radius.full,
+    borderRadius: 99,
     overflow: "hidden",
-    marginBottom: Spacing.sm,
+    marginTop: 12,
   },
   fill: {
     height: "100%",
-    borderRadius: Radius.full,
+    borderRadius: 99,
   },
-  statsRow: {
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 0,
+  },
+  topRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 4,
+    alignItems: "center",
+    gap: 12,
   },
-  statsLabel: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    marginBottom: 2,
+  iconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
-  statsValue: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
+  iconLetter: {
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: -0.3,
   },
-  limitText: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    marginTop: 2,
+  titleBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  name: {
+    fontSize: 14.5,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+    letterSpacing: -0.2,
+  },
+  goal: {
+    fontSize: 11.5,
+    color: Colors.textSecondary,
+    fontWeight: "600",
+  },
+  rightBlock: {
+    alignItems: "flex-end",
+    gap: 2,
+    flexShrink: 0,
+  },
+  amount: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: Colors.textPrimary,
+    letterSpacing: -0.3,
+  },
+  pct: {
+    fontSize: 11.5,
+    fontWeight: "800",
+    letterSpacing: -0.1,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 4,
+    marginTop: 8,
+    marginRight: -4,
+    marginBottom: -4,
+  },
+  actionBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
-// ─── Add / Edit Budget Modal ───────────────────────────────────────────────────
+// ─── Total Budget Hero (lime) ──────────────────────────────────────────────────
+interface TotalCardProps {
+  totalBudget: Budget | undefined;
+  totalSpent: number;
+  month: string;
+  onEdit: () => void;
+}
+
+const TotalCard: React.FC<TotalCardProps> = React.memo(
+  ({ totalBudget, totalSpent, month, onEdit }) => {
+    const limit = totalBudget?.monthly_limit ?? 0;
+    const remaining = limit - totalSpent;
+    const ratio = limit > 0 ? totalSpent / limit : 0;
+    const pct = Math.min(Math.round(ratio * 100), 100);
+    const isOver = ratio >= 1;
+
+    return (
+      <View style={heroStyles.card}>
+        <View style={heroStyles.headerRow}>
+          <Text style={heroStyles.eyebrow}>
+            {formatMonthLabel(month).toUpperCase()}
+          </Text>
+          <TouchableOpacity
+            onPress={onEdit}
+            style={heroStyles.editBtn}
+            activeOpacity={0.85}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather
+              name={limit > 0 ? "edit-2" : "plus"}
+              size={14}
+              color={Colors.white}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={heroStyles.label}>Total Monthly Budget</Text>
+        <Text style={heroStyles.amount}>
+          {limit > 0 ? formatCurrency(limit) : "No limit set"}
+        </Text>
+
+        {limit > 0 ? (
+          <>
+            <View style={heroStyles.barRow}>
+              <View style={heroStyles.track}>
+                <View
+                  style={[
+                    heroStyles.fill,
+                    {
+                      width: `${pct}%`,
+                      backgroundColor: isOver
+                        ? Colors.danger
+                        : ratio >= 0.8
+                          ? Colors.brandBlack
+                          : Colors.accent,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={heroStyles.pctText}>{pct}%</Text>
+            </View>
+
+            <View style={heroStyles.metaRow}>
+              <Text style={heroStyles.metaText}>
+                Spent {formatCurrency(totalSpent)}
+              </Text>
+              <Text
+                style={[
+                  heroStyles.metaText,
+                  isOver && { color: Colors.danger },
+                ]}
+              >
+                {remaining < 0
+                  ? `${formatCurrency(Math.abs(remaining))} over`
+                  : `${formatCurrency(remaining)} left`}
+              </Text>
+            </View>
+          </>
+        ) : (
+          <Text style={heroStyles.noBudgetSubtext}>
+            Tap the + icon to set a monthly limit
+          </Text>
+        )}
+      </View>
+    );
+  },
+);
+TotalCard.displayName = "TotalCard";
+
+const heroStyles = StyleSheet.create({
+  card: {
+    backgroundColor: Colors.primary,
+    borderRadius: 26,
+    padding: 22,
+    marginBottom: Spacing.md,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 0,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: Colors.textOnLime,
+    opacity: 0.75,
+    letterSpacing: 1.3,
+  },
+  editBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.brandBlack,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.textOnLime,
+    marginBottom: 4,
+  },
+  amount: {
+    fontSize: 40,
+    fontWeight: "800",
+    color: Colors.textOnLime,
+    letterSpacing: -1.5,
+    marginBottom: 14,
+  },
+  barRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  track: {
+    flex: 1,
+    height: 8,
+    borderRadius: 99,
+    backgroundColor: "rgba(15,17,21,0.18)",
+    overflow: "hidden",
+  },
+  fill: {
+    height: "100%",
+    borderRadius: 99,
+  },
+  pctText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: Colors.textOnLime,
+    minWidth: 36,
+    textAlign: "right",
+  },
+  metaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  metaText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.textOnLime,
+    opacity: 0.85,
+  },
+  noBudgetSubtext: {
+    fontSize: 13,
+    color: Colors.textOnLime,
+    opacity: 0.75,
+    fontWeight: "600",
+    marginTop: -8,
+  },
+});
+
+// ─── Add / Edit Modal ──────────────────────────────────────────────────────────
 interface BudgetModalProps {
   visible: boolean;
   editBudget: Budget | null;
@@ -289,7 +441,6 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const insets = useInsets();
 
-  // Populate form when opening for edit
   useEffect(() => {
     if (visible) {
       setLimitText(editBudget ? String(editBudget.monthly_limit) : "");
@@ -299,8 +450,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
   }, [visible, editBudget]);
 
   const availableCategories = useMemo(() => {
-    if (editBudget) return categories; // editing: show all categories
-    // creating: exclude categories that already have a budget for this month
+    if (editBudget) return categories;
     return categories.filter((c) => !usedCategoryIds.has(c.id));
   }, [categories, usedCategoryIds, editBudget]);
 
@@ -332,22 +482,22 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
               { paddingBottom: insets.bottom + Spacing.lg },
             ]}
           >
-            {/* Handle */}
             <View style={modalStyles.handle} />
 
-            {/* Title */}
             <View style={modalStyles.titleRow}>
-              <Text style={modalStyles.title}>
-                {editBudget ? "Edit Budget" : "Set Budget"}
-              </Text>
+              <View>
+                <Text style={modalStyles.title}>
+                  {editBudget ? "Edit Budget" : "Set Budget"}
+                </Text>
+                <Text style={modalStyles.monthChip}>
+                  {formatMonthLabel(month)}
+                </Text>
+              </View>
               <TouchableOpacity onPress={onClose} style={modalStyles.closeBtn}>
-                <Feather name="x" size={18} color={Colors.textMuted} />
+                <Feather name="x" size={16} color={Colors.textMuted} />
               </TouchableOpacity>
             </View>
 
-            <Text style={modalStyles.monthChip}>{formatMonthLabel(month)}</Text>
-
-            {/* Category Selector (only when creating) */}
             {!editBudget && (
               <View style={modalStyles.section}>
                 <Text style={modalStyles.sectionLabel}>Category</Text>
@@ -356,7 +506,6 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={modalStyles.catScrollContent}
                 >
-                  {/* Total Budget pill */}
                   <TouchableOpacity
                     style={[
                       modalStyles.catPill,
@@ -376,7 +525,9 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
                       name="layers"
                       size={12}
                       color={
-                        selectedCatId === null ? Colors.white : Colors.textMuted
+                        selectedCatId === null
+                          ? Colors.white
+                          : Colors.textSecondary
                       }
                     />
                     <Text
@@ -390,48 +541,41 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
                     </Text>
                   </TouchableOpacity>
 
-                  {availableCategories.map((c) => (
-                    <TouchableOpacity
-                      key={c.id}
-                      style={[
-                        modalStyles.catPill,
-                        selectedCatId === c.id && modalStyles.catPillSelected,
-                        { borderColor: `${c.color}55` },
-                        selectedCatId === c.id && {
-                          backgroundColor: c.color,
-                          borderColor: c.color,
-                        },
-                      ]}
-                      onPress={() => setSelectedCatId(c.id)}
-                    >
-                      <View
+                  {availableCategories.map((c) => {
+                    const isSel = selectedCatId === c.id;
+                    return (
+                      <TouchableOpacity
+                        key={c.id}
                         style={[
-                          modalStyles.catDot,
-                          {
-                            backgroundColor:
-                              selectedCatId === c.id ? Colors.white : c.color,
-                          },
+                          modalStyles.catPill,
+                          isSel && modalStyles.catPillSelected,
                         ]}
-                      />
-                      <Text
-                        style={[
-                          modalStyles.catPillText,
-                          selectedCatId === c.id &&
-                            modalStyles.catPillTextSelected,
-                        ]}
-                        numberOfLines={1}
+                        onPress={() => setSelectedCatId(c.id)}
                       >
-                        {c.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <View
+                          style={[
+                            modalStyles.catDot,
+                            { backgroundColor: c.color },
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            modalStyles.catPillText,
+                            isSel && modalStyles.catPillTextSelected,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {c.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </ScrollView>
               </View>
             )}
 
-            {/* Limit Input */}
             <View style={modalStyles.section}>
-              <Text style={modalStyles.sectionLabel}>Monthly Limit (₹)</Text>
+              <Text style={modalStyles.sectionLabel}>Monthly Limit</Text>
               <View style={modalStyles.inputWrapper}>
                 <Text style={modalStyles.currencySymbol}>₹</Text>
                 <TextInput
@@ -441,23 +585,22 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
                     setLimitText(t);
                     setError(null);
                   }}
-                  placeholder="e.g. 10000"
+                  placeholder="0"
                   placeholderTextColor={Colors.inputPlaceholder}
                   keyboardType="numeric"
-                  selectionColor={Colors.primary}
-                  cursorColor={Colors.primary}
+                  selectionColor={Colors.brandBlack}
+                  cursorColor={Colors.brandBlack}
                   autoFocus
                 />
               </View>
               {error && <Text style={modalStyles.errorText}>{error}</Text>}
             </View>
 
-            {/* Save Button */}
             <TouchableOpacity
               style={[modalStyles.saveBtn, isSaving && { opacity: 0.65 }]}
               onPress={handleSave}
               disabled={isSaving}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               {isSaving ? (
                 <ActivityIndicator color={Colors.white} size="small" />
@@ -477,7 +620,7 @@ const BudgetModal: React.FC<BudgetModalProps> = ({
 const modalStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: Colors.overlay,
+    backgroundColor: Colors.transparent,
     justifyContent: "flex-end",
   },
   sheet: {
@@ -486,11 +629,14 @@ const modalStyles = StyleSheet.create({
     borderTopRightRadius: 28,
     paddingTop: Spacing.sm,
     paddingHorizontal: Spacing.lg,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.surfaceBorder,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 0,
   },
   handle: {
-    width: 36,
+    width: 38,
     height: 4,
     borderRadius: 2,
     backgroundColor: Colors.surfaceBorder,
@@ -500,13 +646,14 @@ const modalStyles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.xs,
+    alignItems: "flex-start",
+    marginBottom: Spacing.lg,
   },
   title: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
+    fontSize: 19,
+    fontWeight: "800",
     color: Colors.textPrimary,
+    letterSpacing: -0.4,
   },
   closeBtn: {
     width: 32,
@@ -517,338 +664,97 @@ const modalStyles = StyleSheet.create({
     justifyContent: "center",
   },
   monthChip: {
-    fontSize: FontSize.xs,
-    color: Colors.primaryLight,
-    fontWeight: FontWeight.semibold,
-    marginBottom: Spacing.md,
-    letterSpacing: 0.4,
+    fontSize: 12,
+    color: Colors.accent,
+    fontWeight: "700",
+    marginTop: 2,
+    letterSpacing: 0.2,
   },
   section: {
     marginBottom: Spacing.md,
   },
   sectionLabel: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
+    fontSize: 12,
+    fontWeight: "800",
     color: Colors.textSecondary,
-    marginBottom: Spacing.xs,
-    letterSpacing: 0.3,
+    marginBottom: 10,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
   },
   catScrollContent: {
-    gap: Spacing.xs,
+    gap: 8,
     paddingVertical: 2,
   },
   catPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: Radius.full,
-    borderWidth: 1.5,
-    borderColor: Colors.surfaceBorder,
+    paddingVertical: 8,
+    borderRadius: 99,
     backgroundColor: Colors.surfaceElevated,
   },
   catPillSelected: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: Colors.brandBlack,
   },
   catPillDisabled: {
     opacity: 0.4,
   },
   catPillText: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semibold,
-    color: Colors.textMuted,
+    fontSize: 12.5,
+    fontWeight: "700",
+    color: Colors.textSecondary,
   },
   catPillTextSelected: {
     color: Colors.white,
   },
   catDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.inputBackground,
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    borderColor: Colors.inputBorder,
-    paddingHorizontal: Spacing.md,
-    minHeight: 52,
+    backgroundColor: Colors.surfaceElevated,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    minHeight: 54,
   },
   currencySymbol: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    color: Colors.textSecondary,
-    marginRight: 4,
+    fontSize: 19,
+    fontWeight: "800",
+    color: Colors.accent,
+    marginRight: 6,
   },
   input: {
     flex: 1,
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semibold,
+    fontSize: 19,
+    fontWeight: "700",
     color: Colors.textPrimary,
     paddingVertical: Spacing.sm,
+    letterSpacing: -0.5,
   },
   errorText: {
-    fontSize: FontSize.xs,
+    fontSize: 12,
     color: Colors.danger,
-    marginTop: Spacing.xs,
+    marginTop: 6,
     marginLeft: 2,
+    fontWeight: "600",
   },
   saveBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.md,
+    backgroundColor: Colors.brandBlack,
+    borderRadius: 99,
     alignItems: "center",
     justifyContent: "center",
     minHeight: 52,
-    marginTop: Spacing.xs,
+    marginTop: 4,
   },
   saveBtnText: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
+    fontSize: 15,
+    fontWeight: "800",
     color: Colors.white,
-    letterSpacing: 0.3,
-  },
-});
-
-// ─── Total Budget Hero Card ────────────────────────────────────────────────────
-interface TotalCardProps {
-  totalBudget: Budget | undefined;
-  totalSpent: number;
-  month: string;
-  onEdit: () => void;
-}
-
-const TotalCard: React.FC<TotalCardProps> = React.memo(
-  ({ totalBudget, totalSpent, month, onEdit }) => {
-    const limit = totalBudget?.monthly_limit ?? 0;
-    const remaining = limit - totalSpent;
-    const ratio = limit > 0 ? totalSpent / limit : 0;
-    const pct = Math.min(Math.round(ratio * 100), 100);
-    const barColor = progressColor(ratio);
-
-    const barAnim = useRef(new Animated.Value(0)).current;
-    useEffect(() => {
-      Animated.timing(barAnim, {
-        toValue: Math.min(ratio, 1),
-        duration: 700,
-        useNativeDriver: false,
-      }).start();
-    }, [ratio]);
-
-    return (
-      <View style={heroStyles.card}>
-        {/* Decorative orb */}
-        <View
-          style={[heroStyles.orb, { backgroundColor: `${Colors.primary}20` }]}
-        />
-
-        <View style={heroStyles.topRow}>
-          <View>
-            <Text style={heroStyles.chipLabel}>
-              {formatMonthLabel(month).toUpperCase()} · MONTHLY BUDGET
-            </Text>
-            <Text style={heroStyles.limitAmount}>
-              {limit > 0 ? formatCurrency(limit) : "No limit set"}
-            </Text>
-          </View>
-          <TouchableOpacity onPress={onEdit} style={heroStyles.editBtn}>
-            <Feather
-              name={limit > 0 ? "edit-2" : "plus"}
-              size={16}
-              color={Colors.white}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {limit > 0 && (
-          <>
-            {/* Progress bar */}
-            <View style={heroStyles.track}>
-              <Animated.View
-                style={[
-                  heroStyles.fill,
-                  {
-                    backgroundColor: barColor,
-                    width: barAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["0%", "100%"],
-                    }),
-                  },
-                ]}
-              />
-            </View>
-
-            {/* Stats */}
-            <View style={heroStyles.statsRow}>
-              <View>
-                <Text style={heroStyles.statLabel}>Spent</Text>
-                <Text style={[heroStyles.statValue, { color: barColor }]}>
-                  {formatCurrency(totalSpent)}
-                </Text>
-              </View>
-              <View style={{ alignItems: "center" }}>
-                <Text style={heroStyles.statLabel}>Used</Text>
-                <Text style={[heroStyles.statValue, { color: barColor }]}>
-                  {pct}%
-                </Text>
-              </View>
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={heroStyles.statLabel}>Remaining</Text>
-                <Text
-                  style={[
-                    heroStyles.statValue,
-                    {
-                      color: remaining < 0 ? Colors.danger : Colors.textPrimary,
-                    },
-                  ]}
-                >
-                  {remaining < 0
-                    ? `-${formatCurrency(Math.abs(remaining))}`
-                    : formatCurrency(remaining)}
-                </Text>
-              </View>
-            </View>
-
-            {ratio >= 1 && (
-              <View style={heroStyles.warningBanner}>
-                <Feather
-                  name="alert-triangle"
-                  size={12}
-                  color={Colors.danger}
-                />
-                <Text style={heroStyles.warningText}>
-                  You've exceeded your monthly budget!
-                </Text>
-              </View>
-            )}
-            {ratio >= 0.8 && ratio < 1 && (
-              <View
-                style={[
-                  heroStyles.warningBanner,
-                  {
-                    backgroundColor: `${Colors.warning}18`,
-                    borderColor: `${Colors.warning}40`,
-                  },
-                ]}
-              >
-                <Feather name="alert-circle" size={12} color={Colors.warning} />
-                <Text
-                  style={[heroStyles.warningText, { color: Colors.warning }]}
-                >
-                  You're close to your budget limit
-                </Text>
-              </View>
-            )}
-          </>
-        )}
-
-        {!totalBudget && (
-          <Text style={heroStyles.noBudgetSubtext}>
-            Tap + to set a total monthly spending limit
-          </Text>
-        )}
-      </View>
-    );
-  },
-);
-
-TotalCard.displayName = "TotalCard";
-
-const heroStyles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.surfaceBorder,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
-    overflow: "hidden",
-  },
-  orb: {
-    position: "absolute",
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    top: -60,
-    right: -40,
-  },
-  topRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: Spacing.md,
-  },
-  chipLabel: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semibold,
-    color: Colors.primaryLight,
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  limitAmount: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.extrabold,
-    color: Colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  editBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  track: {
-    height: 8,
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: Radius.full,
-    overflow: "hidden",
-    marginBottom: Spacing.md,
-  },
-  fill: {
-    height: "100%",
-    borderRadius: Radius.full,
-  },
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  statLabel: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    marginBottom: 3,
-  },
-  statValue: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-  },
-  warningBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: `${Colors.danger}18`,
-    borderWidth: 1,
-    borderColor: `${Colors.danger}40`,
-    borderRadius: Radius.md,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    marginTop: Spacing.md,
-  },
-  warningText: {
-    fontSize: FontSize.xs,
-    color: Colors.danger,
-    fontWeight: FontWeight.medium,
-  },
-  noBudgetSubtext: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
-    marginTop: -4,
+    letterSpacing: -0.2,
   },
 });
 
@@ -859,8 +765,8 @@ const keyExtractor = (item: Budget) => item.id;
 export const BudgetScreen: React.FC = () => {
   const insets = useInsets();
   const month = useMemo(() => currentMonthKey(), []);
+  const didFetch = useRef(false);
 
-  // Store selectors – granular to avoid re-renders
   const budgets = useFinanceStore(selectBudgets);
   const budgetsLoading = useFinanceStore(selectBudgetsLoading);
   const expenses = useFinanceStore(selectExpenses);
@@ -871,23 +777,23 @@ export const BudgetScreen: React.FC = () => {
   const upsertBudget = useFinanceStore((s) => s.upsertBudget);
   const removeBudget = useFinanceStore((s) => s.removeBudget);
 
-  // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [editBudget, setEditBudget] = useState<Budget | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // ── Load data on focus ──────────────────────────────────────────────────────
+  // Fetch once on first focus only; the store no-ops on subsequent
+  // focuses if data is already cached, but doing it once avoids even
+  // re-evaluating the focus effect cost.
   useFocusEffect(
     useCallback(() => {
+      if (didFetch.current) return;
+      didFetch.current = true;
       fetchBudgets(month);
       fetchExpenses();
       fetchCategories();
     }, [month, fetchBudgets, fetchExpenses, fetchCategories]),
   );
 
-  // ── Memoized calculations ───────────────────────────────────────────────────
-
-  /** All expenses for the selected month */
   const monthExpenses = useMemo(() => {
     const [y, m] = month.split("-").map(Number);
     return expenses.filter((e) => {
@@ -896,13 +802,11 @@ export const BudgetScreen: React.FC = () => {
     });
   }, [expenses, month]);
 
-  /** Total amount spent this month */
   const totalSpent = useMemo(
     () => monthExpenses.reduce((sum, e) => sum + Number(e.amount), 0),
     [monthExpenses],
   );
 
-  /** Map of categoryId → amount spent this month */
   const categorySpentMap = useMemo(() => {
     const map = new Map<string, number>();
     monthExpenses.forEach((e) => {
@@ -916,32 +820,26 @@ export const BudgetScreen: React.FC = () => {
     return map;
   }, [monthExpenses]);
 
-  /** Map of categoryId → Category for O(1) lookup */
   const categoryMap = useMemo(() => {
     const m = new Map<string, Category>();
     categories.forEach((c) => m.set(c.id, c));
     return m;
   }, [categories]);
 
-  /** The "total" budget (category_id === null) */
   const totalBudget = useMemo(
     () => budgets.find((b) => b.category_id === null),
     [budgets],
   );
 
-  /** Per-category budgets only */
   const categoryBudgets = useMemo(
     () => budgets.filter((b) => b.category_id !== null),
     [budgets],
   );
 
-  /** Set of category IDs that already have a budget (to block duplicates in modal) */
   const usedCategoryIds = useMemo<Set<string | null>>(
     () => new Set(budgets.map((b) => b.category_id)),
     [budgets],
   );
-
-  // ── Handlers ────────────────────────────────────────────────────────────────
 
   const openAdd = useCallback(() => {
     setEditBudget(null);
@@ -993,8 +891,6 @@ export const BudgetScreen: React.FC = () => {
     [upsertBudget, month],
   );
 
-  // ── Render helpers ──────────────────────────────────────────────────────────
-
   const renderItem = useCallback<ListRenderItem<Budget>>(
     ({ item, index }) => (
       <BudgetRow
@@ -1015,30 +911,22 @@ export const BudgetScreen: React.FC = () => {
 
   const listHeader = useMemo(
     () => (
-      <View
-        style={{
-          paddingTop: Spacing.lg,
-          paddingHorizontal: Spacing.md,
-        }}
-      >
-        {/* Screen header */}
-        <View style={screenStyles.headerRow}>
-          <View>
-            <Text style={screenStyles.screenTitle}>Budget</Text>
-            <Text style={screenStyles.screenSub}>
-              {formatMonthLabel(month)}
-            </Text>
+      <View style={screenStyles.headerWrap}>
+        <View style={screenStyles.titleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={screenStyles.eyebrow}>FINANCIAL PLAN</Text>
+            <Text style={screenStyles.title}>Budget</Text>
           </View>
           <TouchableOpacity
             style={screenStyles.addBtn}
             onPress={openAdd}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
-            <Feather name="plus" size={20} color={Colors.white} />
+            <Feather name="plus" size={15} color={Colors.textOnLime} />
+            <Text style={screenStyles.addBtnText}>Add</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Total budget hero */}
         <TotalCard
           totalBudget={totalBudget}
           totalSpent={totalSpent}
@@ -1046,13 +934,14 @@ export const BudgetScreen: React.FC = () => {
           onEdit={openEditTotal}
         />
 
-        {/* Category budgets section header */}
-        {categoryBudgets.length > 0 && (
-          <View style={screenStyles.sectionHeader}>
-            <Feather name="tag" size={14} color={Colors.textMuted} />
-            <Text style={screenStyles.sectionTitle}>Category Budgets</Text>
-          </View>
-        )}
+        <View style={screenStyles.sectionHeader}>
+          <Text style={screenStyles.sectionTitle}>Budgets by Category</Text>
+          {categoryBudgets.length > 0 && (
+            <Text style={screenStyles.sectionCount}>
+              {categoryBudgets.length} active
+            </Text>
+          )}
+        </View>
       </View>
     ),
     [
@@ -1081,17 +970,13 @@ export const BudgetScreen: React.FC = () => {
       !budgetsLoading && categoryBudgets.length === 0 ? (
         <View style={screenStyles.emptyBox}>
           <View style={screenStyles.emptyIconWrap}>
-            <Feather name="pie-chart" size={24} color={Colors.textMuted} />
+            <Feather name="pie-chart" size={22} color={Colors.accent} />
           </View>
           <Text style={screenStyles.emptyTitle}>No category budgets</Text>
           <Text style={screenStyles.emptySubtitle}>
             Tap{" "}
-            <Text
-              style={{ color: Colors.primary, fontWeight: FontWeight.bold }}
-            >
-              +
-            </Text>{" "}
-            to track spending per category
+            <Text style={screenStyles.emptyAccent}>+ Add</Text> to track
+            {"\n"}spending per category
           </Text>
         </View>
       ) : null,
@@ -1100,39 +985,50 @@ export const BudgetScreen: React.FC = () => {
 
   if (budgetsLoading && budgets.length === 0) {
     return (
-      <View style={screenStyles.loaderContainer}>
-        <ActivityIndicator color={Colors.primary} size="large" />
-      </View>
+      <SafeAreaView style={screenStyles.root} edges={["top", "left", "right"]}>
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+        <View style={screenStyles.listContent}>
+          {listHeader}
+          {[0, 1, 2, 3].map((i) => (
+            <BudgetRowSkeleton key={i} index={i} />
+          ))}
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={screenStyles.root} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      <FlatList
-        data={categoryBudgets}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        ListHeaderComponent={listHeader}
-        ListFooterComponent={listFooter}
-        ListEmptyComponent={listEmpty}
-        contentContainerStyle={screenStyles.listContent}
-        showsVerticalScrollIndicator={false}
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        windowSize={5}
-      />
+      <FadeIn duration={360} style={{ flex: 1 }}>
+        <FlatList
+          data={categoryBudgets}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          ListHeaderComponent={listHeader}
+          ListFooterComponent={listFooter}
+          ListEmptyComponent={listEmpty}
+          contentContainerStyle={screenStyles.listContent}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === "android"}
+        />
+      </FadeIn>
 
-      <BudgetModal
-        visible={modalVisible}
-        editBudget={editBudget}
-        month={month}
-        categories={categories}
-        usedCategoryIds={usedCategoryIds}
-        onClose={() => setModalVisible(false)}
-        onSave={handleSave}
-        isSaving={isSaving}
-      />
+      {modalVisible && (
+        <BudgetModal
+          visible={modalVisible}
+          editBudget={editBudget}
+          month={month}
+          categories={categories}
+          usedCategoryIds={usedCategoryIds}
+          onClose={() => setModalVisible(false)}
+          onSave={handleSave}
+          isSaving={isSaving}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -1150,78 +1046,105 @@ const screenStyles = StyleSheet.create({
     justifyContent: "center",
   },
   listContent: {
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.lg,
   },
-  headerRow: {
+  headerWrap: {
+    paddingTop: Spacing.md,
+  },
+  titleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
   },
-  screenTitle: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.extrabold,
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: Colors.textMuted,
+    letterSpacing: 1.4,
+    marginBottom: 2,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
     color: Colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  screenSub: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
-    marginTop: 2,
+    letterSpacing: -0.8,
   },
   addBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: Colors.primary,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    elevation: 2,
-    shadowColor: Colors.primary,
+    gap: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 99,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 0,
+  },
+  addBtnText: {
+    color: Colors.textOnLime,
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: -0.2,
   },
   sectionHeader: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    gap: 6,
     marginBottom: Spacing.sm,
     marginTop: 4,
+    paddingHorizontal: 2,
   },
   sectionTitle: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
-    color: Colors.textSecondary,
-    letterSpacing: -0.2,
+    fontSize: 18,
+    fontWeight: "800",
+    color: Colors.textPrimary,
+    letterSpacing: -0.4,
+  },
+  sectionCount: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.accent,
   },
   emptyBox: {
     alignItems: "center",
     paddingVertical: Spacing.xxl,
     paddingHorizontal: Spacing.lg,
-    gap: Spacing.sm,
+    gap: 8,
   },
   emptyIconWrap: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: 22,
     backgroundColor: Colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.surfaceBorder,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.xs,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 0,
   },
   emptyTitle: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
-    color: Colors.textSecondary,
+    fontSize: 17,
+    fontWeight: "800",
+    color: Colors.textPrimary,
+    letterSpacing: -0.3,
   },
   emptySubtitle: {
-    fontSize: FontSize.sm,
-    color: Colors.textMuted,
+    fontSize: 13.5,
+    color: Colors.textSecondary,
     textAlign: "center",
     lineHeight: 20,
+    fontWeight: "500",
+  },
+  emptyAccent: {
+    color: Colors.accent,
+    fontWeight: "800",
   },
 });

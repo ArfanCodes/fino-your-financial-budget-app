@@ -23,31 +23,34 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 
 type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
 
+// Unified active accent — deep olive from the design (single accent for all tabs)
+const ACTIVE_ACCENT = Colors.accent;
+
 const TAB_CONFIG: Record<
   keyof TabParamList,
-  { icon: FeatherIconName; label: string; accent: string }
+  { icon: FeatherIconName; label: string }
 > = {
-  Overview:        { icon: "home",        label: "Home",   accent: "#818CF8" },
-  TransactionsTab: { icon: "credit-card", label: "Spend",  accent: "#2DD4BF" },
-  BudgetTab:       { icon: "pie-chart",   label: "Budget", accent: "#FBB024" },
-  Analytics:       { icon: "bar-chart-2", label: "Stats",  accent: "#F472B6" },
+  Overview:        { icon: "home",        label: "Home"     },
+  TransactionsTab: { icon: "credit-card", label: "Spend"    },
+  BudgetTab:       { icon: "pie-chart",   label: "Budget"   },
+  Analytics:       { icon: "bar-chart-2", label: "Stats"    },
+  SettingsTab:     { icon: "settings",    label: "Settings" },
 };
 
 // ─── Nav Tab (Capsule Pill Item) ──────────────────────────────────────────────
 const NavTab: React.FC<{
   icon: FeatherIconName;
   label: string;
-  accent: string;
   isFocused: boolean;
   onPress: () => void;
   onLongPress: () => void;
-}> = ({ icon, label, accent, isFocused, onPress, onLongPress }) => {
+}> = ({ icon, label, isFocused, onPress, onLongPress }) => {
   const anim = useRef(new Animated.Value(isFocused ? 1 : 0)).current;
 
   useEffect(() => {
     Animated.spring(anim, {
       toValue: isFocused ? 1 : 0,
-      useNativeDriver: false, // Animating layout bounds
+      useNativeDriver: false,
       tension: 100,
       friction: 14,
     }).start();
@@ -65,12 +68,12 @@ const NavTab: React.FC<{
 
   const marginLeft = anim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 8],
+    outputRange: [0, 6],
   });
 
   const paddingH = anim.interpolate({
     inputRange: [0, 1],
-    outputRange: [12, 18],
+    outputRange: [10, 16],
   });
 
   return (
@@ -88,26 +91,26 @@ const NavTab: React.FC<{
           },
         ]}
       >
-        {/* Background pill (fades in cleanly over layout) */}
+        {/* Active pill background — solid olive accent */}
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: `${accent}25`, borderRadius: 22, opacity: anim },
+            { backgroundColor: ACTIVE_ACCENT, borderRadius: 22, opacity: anim },
           ]}
         />
 
         <Feather
           name={icon}
           size={20}
-          color={isFocused ? accent : Colors.textMuted}
+          color={isFocused ? Colors.white : Colors.textSecondary}
         />
-        
+
         <Animated.View
           style={{ overflow: "hidden", maxWidth: textMaxWidth, marginLeft }}
         >
           <Animated.Text
             numberOfLines={1}
-            style={[styles.tabLabel, { color: accent, opacity: textOpacity }]}
+            style={[styles.tabLabel, { color: Colors.white, opacity: textOpacity }]}
           >
             {label}
           </Animated.Text>
@@ -122,7 +125,6 @@ const CustomTabBar = ({ state, descriptors, navigation, insets }: BottomTabBarPr
   return (
     <View style={[styles.tabBarContainer, { bottom: Math.max(insets.bottom, 16) }]}>
       {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
         const cfg = TAB_CONFIG[route.name as keyof TabParamList];
         const isFocused = state.index === index;
 
@@ -150,7 +152,6 @@ const CustomTabBar = ({ state, descriptors, navigation, insets }: BottomTabBarPr
             key={route.key}
             icon={cfg.icon}
             label={cfg.label}
-            accent={cfg.accent}
             isFocused={isFocused}
             onPress={onPress}
             onLongPress={onLongPress}
@@ -172,13 +173,17 @@ const MainTabs: React.FC = () => {
         tabBar={(props) => <CustomTabBar {...props} insets={insets} />}
         screenOptions={{
           headerShown: false,
-          sceneContainerStyle: { backgroundColor: Colors.background },
+          // Clean cross-fade between tabs (paired with the per-screen
+          // fade+scale reveal). Native-driven, lightweight.
+          animation: "fade",
+          lazy: true,
         }}
       >
         <Tab.Screen name="Overview"        component={DashboardScreen}   />
         <Tab.Screen name="TransactionsTab" component={ExpensesNavigator} />
         <Tab.Screen name="BudgetTab"       component={BudgetNavigator}   />
         <Tab.Screen name="Analytics"       component={AnalyticsScreen}   />
+        <Tab.Screen name="SettingsTab"     component={SettingsNavigator} />
       </Tab.Navigator>
     </View>
   );
@@ -188,15 +193,6 @@ const MainTabs: React.FC = () => {
 export const AppNavigator: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="MainTabs" component={MainTabs} />
-    <Stack.Screen
-      name="Settings"
-      component={SettingsNavigator}
-      options={{
-        presentation: "modal",
-        animation: "slide_from_bottom",
-        contentStyle: { backgroundColor: Colors.background },
-      }}
-    />
     <Stack.Screen
       name="Recovery"
       component={RecoveryScreen}
@@ -212,24 +208,22 @@ export const AppNavigator: React.FC = () => (
 const styles = StyleSheet.create({
   tabBarContainer: {
     position: "absolute",
-    left: 20,
-    right: 20,
+    left: 16,
+    right: 16,
     height: 64,
     backgroundColor: Colors.surface,
     borderRadius: 32,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    
-    // Shadow to float beautifully over content
+    paddingHorizontal: 8,
+
     shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2, // Slightly lighter shadow for a neon theme
-    shadowRadius: 10,
-    elevation: 10,
-    
-    // Subtle border for premium feel
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 12,
+
     borderWidth: 1,
     borderColor: Colors.surfaceBorder,
   },
@@ -242,7 +236,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   tabLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
     letterSpacing: 0.2,
   },

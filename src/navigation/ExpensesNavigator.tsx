@@ -14,7 +14,8 @@ export const ExpensesNavigator: React.FC = () => (
     screenOptions={{
       headerShown: false,
       contentStyle: { backgroundColor: Colors.background },
-      animation: "slide_from_right",
+      animation: "fade",
+      animationDuration: 260,
     }}
   >
     <Stack.Screen name="ExpenseList" component={ExpensesScreen} />

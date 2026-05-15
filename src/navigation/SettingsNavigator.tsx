@@ -12,7 +12,6 @@ export const SettingsNavigator: React.FC = () => (
     screenOptions={{
       headerShown: false,
       contentStyle: { backgroundColor: Colors.background },
-      animation: "slide_from_bottom",
     }}
   >
     <Stack.Screen name="SettingsHome" component={SettingsScreen} />

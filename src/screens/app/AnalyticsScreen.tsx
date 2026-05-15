@@ -23,6 +23,7 @@ import {
 } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
+import { FadeIn } from "../../components/FadeIn";
 import { useFinanceStore } from "../../store/finance.store";
 import {
   Colors,
@@ -68,12 +69,15 @@ const Card: React.FC<{ children: React.ReactNode; style?: object }> = ({
 const cardStyle = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
+    borderRadius: 22,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     marginBottom: Spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 0,
   },
 });
 
@@ -82,38 +86,30 @@ const SectionHeader: React.FC<{
   icon: string;
   title: string;
   sub?: string;
-}> = ({ icon, title, sub }) => (
+}> = ({ title, sub }) => (
   <View style={sh.row}>
-    <View style={sh.iconWrap}>
-      <Feather name={icon as any} size={14} color={Colors.primary} />
-    </View>
-    <View style={{ flex: 1 }}>
-      <Text style={sh.title}>{title}</Text>
-      {sub ? <Text style={sh.sub}>{sub}</Text> : null}
-    </View>
+    <Text style={sh.title}>{title}</Text>
+    {sub ? <Text style={sh.sub}>{sub}</Text> : null}
   </View>
 );
 const sh = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  iconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: `${Colors.primary}18`,
-    alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
   },
   title: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
+    fontSize: 16,
+    fontWeight: "800",
     color: Colors.textPrimary,
+    letterSpacing: -0.3,
   },
-  sub: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.medium, marginTop: 1 },
+  sub: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    fontWeight: "600",
+  },
 });
 
 // ─── Insight pill ──────────────────────────────────────────────────────────────
@@ -144,9 +140,9 @@ const InsightPill: React.FC<{
     type === "warn"
       ? Colors.danger
       : type === "good"
-        ? Colors.success
+        ? Colors.accent
         : type === "info"
-          ? Colors.primary
+          ? Colors.accent
           : Colors.textSecondary;
   const icon =
     type === "warn"
@@ -160,19 +156,13 @@ const InsightPill: React.FC<{
     <Animated.View
       style={[
         ipStyle.pill,
-        {
-          borderColor: `${accent}35`,
-          opacity,
-          transform: [{ translateX: tx }],
-        },
+        { opacity, transform: [{ translateX: tx }] },
       ]}
     >
-      <View style={[ipStyle.dot, { backgroundColor: `${accent}25` }]}>
+      <View style={[ipStyle.dot, { backgroundColor: `${accent}1F` }]}>
         <Feather name={icon as any} size={11} color={accent} />
       </View>
-      <Text style={[ipStyle.text, { color: Colors.textSecondary }]}>
-        {text}
-      </Text>
+      <Text style={ipStyle.text}>{text}</Text>
     </Animated.View>
   );
 });
@@ -181,13 +171,10 @@ const ipStyle = StyleSheet.create({
   pill: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: Spacing.sm,
+    gap: 10,
     paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    backgroundColor: Colors.surfaceElevated,
-    marginBottom: 8,
+    paddingHorizontal: 4,
+    marginBottom: 6,
   },
   dot: {
     width: 26,
@@ -196,8 +183,15 @@ const ipStyle = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+    marginTop: 1,
   },
-  text: { flex: 1, fontSize: FontSize.sm, lineHeight: 19 },
+  text: {
+    flex: 1,
+    fontSize: 13.5,
+    lineHeight: 19,
+    color: Colors.textSecondary,
+    fontWeight: "500",
+  },
 });
 
 // ─── Bar Chart (generic) ───────────────────────────────────────────────────────
@@ -258,15 +252,20 @@ const BarChart: React.FC<{ data: BarItem[]; color?: string }> = React.memo(
 );
 BarChart.displayName = "BarChart";
 const bc = StyleSheet.create({
-  wrapper: { flexDirection: "row", alignItems: "flex-end", gap: 4 },
-  col: { flex: 1, alignItems: "center", gap: 4 },
+  wrapper: { flexDirection: "row", alignItems: "flex-end", gap: 6 },
+  col: { flex: 1, alignItems: "center", gap: 6 },
   track: { width: "100%", justifyContent: "flex-end", alignItems: "center" },
-  bar: { width: "80%" },
-  label: { fontSize: 10, color: Colors.textSecondary, fontWeight: FontWeight.medium, textAlign: "center" },
+  bar: { width: "75%" },
+  label: {
+    fontSize: 10.5,
+    color: Colors.textSecondary,
+    fontWeight: "600",
+    textAlign: "center",
+  },
   val: {
     fontSize: 9,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.bold,
+    color: Colors.textMuted,
+    fontWeight: "700",
     textAlign: "center",
     minHeight: 14,
   },
@@ -295,17 +294,17 @@ const CategoryRow: React.FC<{ cat: CatRow; rank: number }> = React.memo(
     const trend = cat.prevPct !== undefined ? cat.pct - cat.prevPct : null;
     return (
       <View style={cr.row}>
-        <View style={[cr.rankBadge, { backgroundColor: `${cat.color}18` }]}>
-          <Text style={[cr.rankNum, { color: cat.color }]}>{rank + 1}</Text>
+        <View style={[cr.iconWrap, { backgroundColor: `${cat.color}1F` }]}>
+          <Text style={[cr.iconLetter, { color: cat.color }]}>
+            {cat.name.charAt(0).toUpperCase()}
+          </Text>
         </View>
         <View style={{ flex: 1, gap: 6 }}>
           <View style={cr.top}>
             <Text style={cr.name} numberOfLines={1}>
               {cat.name}
             </Text>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-            >
+            <View style={cr.amountRow}>
               {trend !== null && (
                 <View
                   style={[
@@ -315,7 +314,7 @@ const CategoryRow: React.FC<{ cat: CatRow; rank: number }> = React.memo(
                         trend > 2
                           ? `${Colors.danger}18`
                           : trend < -2
-                            ? `${Colors.success}18`
+                            ? `${Colors.accent}18`
                             : `${Colors.textMuted}18`,
                     },
                   ]}
@@ -328,12 +327,12 @@ const CategoryRow: React.FC<{ cat: CatRow; rank: number }> = React.memo(
                           ? "trending-down"
                           : "minus"
                     }
-                    size={10}
+                    size={9}
                     color={
                       trend > 2
                         ? Colors.danger
                         : trend < -2
-                          ? Colors.success
+                          ? Colors.accent
                           : Colors.textMuted
                     }
                   />
@@ -345,7 +344,7 @@ const CategoryRow: React.FC<{ cat: CatRow; rank: number }> = React.memo(
                           trend > 2
                             ? Colors.danger
                             : trend < -2
-                              ? Colors.success
+                              ? Colors.accent
                               : Colors.textMuted,
                       },
                     ]}
@@ -371,7 +370,6 @@ const CategoryRow: React.FC<{ cat: CatRow; rank: number }> = React.memo(
               ]}
             />
           </View>
-          <Text style={cr.pct}>{cat.pct.toFixed(1)}% of spending</Text>
         </View>
       </View>
     );
@@ -381,43 +379,53 @@ CategoryRow.displayName = "CategoryRow";
 const cr = StyleSheet.create({
   row: {
     flexDirection: "row",
-    gap: Spacing.sm,
-    marginBottom: 16,
-    alignItems: "flex-start",
+    gap: 12,
+    marginBottom: 14,
+    alignItems: "center",
   },
-  rankBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+  iconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
-  rankNum: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  iconLetter: {
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+  },
   top: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+  amountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   name: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
+    fontSize: 14.5,
+    fontWeight: "700",
     color: Colors.textPrimary,
     flex: 1,
+    letterSpacing: -0.2,
   },
   amount: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
+    fontSize: 14.5,
+    fontWeight: "700",
     color: Colors.textPrimary,
+    letterSpacing: -0.3,
   },
   track: {
     height: 6,
-    backgroundColor: `${Colors.surfaceBorder}60`,
+    backgroundColor: Colors.surfaceElevated,
     borderRadius: 99,
     overflow: "hidden",
   },
   fill: { height: "100%", borderRadius: 99 },
-  pct: { fontSize: FontSize.xs, color: Colors.textMuted },
   trendBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -426,7 +434,7 @@ const cr = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 6,
   },
-  trendText: { fontSize: 10, fontWeight: FontWeight.bold },
+  trendText: { fontSize: 10, fontWeight: "700" },
 });
 
 // ─── Stat tile ────────────────────────────────────────────────────────────────
@@ -436,13 +444,15 @@ const StatTile: React.FC<{
   sub?: string;
   accent?: string;
   icon: string;
-}> = React.memo(({ label, value, sub, accent = Colors.primary, icon }) => (
-  <View style={[st.tile, { borderColor: `${accent}25` }]}>
-    <View style={[st.iconWrap, { backgroundColor: `${accent}15` }]}>
-      <Feather name={icon as any} size={15} color={accent} />
+}> = React.memo(({ label, value, sub, accent = Colors.accent, icon }) => (
+  <View style={st.tile}>
+    <View style={st.topRow}>
+      <Text style={st.label}>{label}</Text>
+      <View style={[st.iconWrap, { backgroundColor: `${accent}1F` }]}>
+        <Feather name={icon as any} size={13} color={accent} />
+      </View>
     </View>
-    <Text style={st.value}>{value}</Text>
-    <Text style={st.label}>{label}</Text>
+    <Text style={st.value} numberOfLines={1}>{value}</Text>
     {sub ? <Text style={st.sub}>{sub}</Text> : null}
   </View>
 ));
@@ -451,35 +461,49 @@ const st = StyleSheet.create({
   tile: {
     flex: 1,
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    padding: Spacing.md,
-    gap: 6,
+    borderRadius: 20,
+    padding: 14,
+    gap: 8,
     minWidth: (CHART_W - Spacing.sm) / 2,
     maxWidth: (CHART_W - Spacing.sm) / 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 0,
+  },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   iconWrap: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 2,
   },
   value: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
+    fontSize: 19,
+    fontWeight: "800",
     color: Colors.textPrimary,
     letterSpacing: -0.5,
+    marginTop: 2,
   },
   label: {
-    fontSize: FontSize.xs,
+    fontSize: 11,
     color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
-  sub: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.medium, marginTop: 2 },
+  sub: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    fontWeight: "600",
+    marginTop: -2,
+  },
 });
 
 // ─── Budget vs Actual gauge ────────────────────────────────────────────────────
@@ -491,7 +515,7 @@ const BudgetGauge: React.FC<{ spent: number; limit: number }> = React.memo(
       ? Colors.danger
       : pct >= 0.8
         ? Colors.warning
-        : Colors.success;
+        : Colors.accent;
     const barW = useRef(new Animated.Value(0)).current;
     React.useEffect(() => {
       Animated.timing(barW, {
@@ -548,21 +572,21 @@ const BudgetGauge: React.FC<{ spent: number; limit: number }> = React.memo(
 );
 BudgetGauge.displayName = "BudgetGauge";
 const bg = StyleSheet.create({
-  wrap: { gap: 6 },
+  wrap: { gap: 8 },
   labelRow: { flexDirection: "row", justifyContent: "space-between" },
   labelLeft: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
+    fontSize: 11,
+    color: Colors.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    fontWeight: FontWeight.medium,
+    letterSpacing: 0.6,
+    fontWeight: "700",
   },
   labelRight: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
+    fontSize: 11,
+    color: Colors.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    fontWeight: FontWeight.medium,
+    letterSpacing: 0.6,
+    fontWeight: "700",
   },
   amtRow: {
     flexDirection: "row",
@@ -570,18 +594,18 @@ const bg = StyleSheet.create({
     alignItems: "baseline",
   },
   amt: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
+    fontSize: 24,
+    fontWeight: "800",
     letterSpacing: -0.5,
   },
   amtLimit: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semibold,
+    fontSize: 16,
+    fontWeight: "700",
     color: Colors.textSecondary,
   },
   track: {
-    height: 10,
-    backgroundColor: `${Colors.surfaceBorder}60`,
+    height: 8,
+    backgroundColor: Colors.surfaceElevated,
     borderRadius: 99,
     overflow: "hidden",
   },
@@ -591,16 +615,16 @@ const bg = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  pct: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  pct: { fontSize: 13, fontWeight: "700" },
   overText: {
-    fontSize: FontSize.sm,
+    fontSize: 12.5,
     color: Colors.danger,
-    fontWeight: FontWeight.semibold,
+    fontWeight: "700",
   },
   remainText: {
-    fontSize: FontSize.sm,
-    color: Colors.success,
-    fontWeight: FontWeight.semibold,
+    fontSize: 12.5,
+    color: Colors.accent,
+    fontWeight: "700",
   },
 });
 
@@ -883,14 +907,17 @@ export const AnalyticsScreen: React.FC = () => {
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
+      <FadeIn duration={360} style={{ flex: 1 }}>
       <View style={styles.headerShell}>
-        <Text style={styles.pageTitle}>Analytics</Text>
-        <Text style={styles.pageSub}>
-          {new Date().toLocaleString("en-IN", {
-            month: "long",
-            year: "numeric",
-          })}
-        </Text>
+        <View>
+          <Text style={styles.pageEyebrow}>FINANCIAL OVERVIEW</Text>
+          <Text style={styles.pageTitle}>Analytics</Text>
+        </View>
+        <View style={styles.dateChip}>
+          <Text style={styles.dateChipText}>
+            {new Date().toLocaleString("en-IN", { month: "short", year: "numeric" })}
+          </Text>
+        </View>
       </View>
 
       <ScrollView
@@ -917,7 +944,7 @@ export const AnalyticsScreen: React.FC = () => {
             accent={
               pctChange !== null && pctChange > 15
                 ? Colors.danger
-                : Colors.primary
+                : Colors.accent
             }
           />
           <StatTile
@@ -932,7 +959,7 @@ export const AnalyticsScreen: React.FC = () => {
             label="Avg / Txn"
             value={formatCurrency(avgMetrics.avgPerTxn)}
             sub={`${curExpenses.length} transactions`}
-            accent={Colors.info}
+            accent={Colors.accent}
           />
           <StatTile
             icon="shield"
@@ -952,7 +979,7 @@ export const AnalyticsScreen: React.FC = () => {
             accent={
               budgetLimit > 0 && curTotal > budgetLimit
                 ? Colors.danger
-                : Colors.success
+                : Colors.accent
             }
           />
         </View>
@@ -976,7 +1003,7 @@ export const AnalyticsScreen: React.FC = () => {
             title="6-Month Trend"
             sub="Monthly spending history"
           />
-          <BarChart data={monthlyData} color={Colors.primary} />
+          <BarChart data={monthlyData} color={Colors.accent} />
         </Card>
 
         {/* ── 4. Last 7 Days ──────────────────────────────────────────────── */}
@@ -1000,7 +1027,7 @@ export const AnalyticsScreen: React.FC = () => {
                 : "All days"
             }
           />
-          <BarChart data={dowData.bars} color={Colors.info} />
+          <BarChart data={dowData.bars} color={Colors.accent} />
         </Card>
 
         {/* ── 6. Category Breakdown ───────────────────────────────────────── */}
@@ -1029,6 +1056,7 @@ export const AnalyticsScreen: React.FC = () => {
           ))}
         </Card>
       </ScrollView>
+      </FadeIn>
     </SafeAreaView>
   );
 };
@@ -1038,19 +1066,40 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   headerShell: {
     paddingHorizontal: H_PAD,
-    paddingTop: Spacing.sm,
+    paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
     backgroundColor: Colors.background,
   },
   scroll: { paddingHorizontal: H_PAD },
 
+  pageEyebrow: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: Colors.textMuted,
+    letterSpacing: 1.4,
+    marginBottom: 2,
+  },
   pageTitle: {
-    fontSize: FontSize.xxxl,
-    fontWeight: FontWeight.bold,
+    fontSize: 32,
+    fontWeight: "800",
     color: Colors.textPrimary,
     letterSpacing: -1,
   },
-  pageSub: { fontSize: FontSize.sm, color: Colors.textSecondary, fontWeight: FontWeight.medium, marginTop: 2 },
+  dateChip: {
+    backgroundColor: Colors.brandBlack,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 99,
+  },
+  dateChipText: {
+    color: Colors.white,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+  },
 
   tilesRow: {
     flexDirection: "row",

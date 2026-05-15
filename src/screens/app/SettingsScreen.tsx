@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { FadeIn } from "../../components/FadeIn";
 import { Feather } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -30,11 +31,11 @@ import {
   Radius,
 } from "../../utils/constants";
 import { getInitials } from "../../utils/helpers";
-import type { AppStackParamList } from "../../types";
+import type { SettingsStackParamList } from "../../types";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Props = {
-  navigation: NativeStackNavigationProp<AppStackParamList, "Settings">;
+  navigation: NativeStackNavigationProp<SettingsStackParamList, "SettingsHome">;
 };
 type FeatherIcon = React.ComponentProps<typeof Feather>["name"];
 
@@ -92,7 +93,6 @@ const rowStyles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.surfaceBorder,
     borderBottomColor: Colors.surfaceBorder,
     // Removed literal backgroundColor here to inherit from group and stop Android clipping
   },
@@ -202,16 +202,10 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         onCancel={() => setShowSignOutModal(false)}
       />
 
+      <FadeIn duration={360} style={{ flex: 1 }}>
       {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.iconBtn}
-          activeOpacity={0.7}
-        >
-          <Feather name="chevron-left" size={20} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={styles.headerTitle}>FinPulse</Text>
         <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={openEditModal}>
           <Feather name="edit-2" size={16} color={Colors.textPrimary} />
         </TouchableOpacity>
@@ -356,6 +350,7 @@ export const SettingsScreen: React.FC<Props> = ({ navigation }) => {
         </Section>
 
       </ScrollView>
+      </FadeIn>
     </SafeAreaView>
   );
 };
@@ -370,7 +365,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.md,
   },
   iconBtn: {
     width: 44,

@@ -1,43 +1,49 @@
-// ─── Color Palette — Fintech White & Electric Violet ─────────────────────────
+// ─── Color Palette — FinPulse (Neon Lime + Deep Olive on Light Gray) ─────────
 export const Colors = {
-  // Primary brand — Electric Violet from the cards
-  primary: '#7148FC',         
-  primaryLight: '#9474FF',
-  primaryDark: '#5024DE',
+  // Primary brand — Electric neon lime used for hero card backgrounds & highlights
+  primary: '#CCFA32',
+  primaryLight: '#DEFC6B',
+  primaryDark: '#A8D625',
 
-  // Accent — Pink highlights for minor icons
-  accent: '#FF57A6',          
-  accentLight: '#FF88C2',
-  accentDark: '#D82E7E',
+  // Brand accent — Deep olive/green used for active pills, progress fills,
+  // "View all" links, the Pro Level chip, and dark text-on-lime callouts.
+  accent: '#4D6B12',
+  accentLight: '#6B8C2A',
+  accentDark: '#37500A',
 
-  // Semantic (Bright variations matching screenshot)
-  success: '#10C759', // Vibrant 'transfer' green
+  // True black — pill selectors (Month/Week), Upgrade, Send icon, primary CTAs
+  brandBlack: '#0F1115',
+  brandBlackSoft: '#1A1D24',
+
+  // Semantic
+  success: '#4D6B12',   // Use brand olive for "under budget" success states
   warning: '#FFAB00',
-  danger: '#FF3D71',  // Redish-pink for expensive transactions
-  info: '#00B8D9',
+  danger: '#E5484D',    // Negative transactions, sign-out, alerts
+  info: '#0D8FB2',
 
-  // Neutrals — Air-light fintech vibes
-  background: '#F6F8FD',      // Faint icy-lavender/white background
+  // Neutrals — Light fintech surfaces
+  background: '#F2F3F5',      // Soft neutral page background
   surface: '#FFFFFF',         // Crisp pure white cards
-  surfaceElevated: '#F2F5FB', // Soft button backgrounds (for pills)
-  surfaceBorder: '#E8ECF4',   // Very faint, airy borders
+  surfaceElevated: '#EAECEF', // Faint button/chip background
+  surfaceBorder: '#E4E6EB',   // Hairline borders
 
-  // Text — Maximum readability
-  textPrimary: '#12141D',     // Stark dark black-navy for strong contrast
-  textSecondary: '#6B7280',   // Cool slate for subtext and axis labels
-  textMuted: '#9BA3BB',       // Lighter faint slate
-  textInverse: '#FFFFFF',     // White text on dark colored buttons
+  // Text
+  textPrimary: '#0F1115',     // Near-black for headings & balances
+  textSecondary: '#6B7280',   // Slate for sub-labels
+  textMuted: '#9BA0A8',       // Lightest slate for placeholders
+  textInverse: '#FFFFFF',     // White text on dark buttons
+  textOnLime: '#0F1115',      // Always dark text on lime backgrounds
 
   // Input
-  inputBackground: '#F2F5FB',
-  inputBorder: '#E8ECF4',
-  inputBorderFocused: '#7148FC',
-  inputPlaceholder: '#9BA3BB',
+  inputBackground: '#FFFFFF',
+  inputBorder: '#E4E6EB',
+  inputBorderFocused: '#0F1115',
+  inputPlaceholder: '#9BA0A8',
 
-  // Overlay
-  overlay: 'rgba(18, 20, 29, 0.4)',
+  // Overlay (modal backdrop — kept subtle so colored hero cards don't muddy)
+  overlay: 'rgba(15, 17, 21, 0.25)',
 
-  // White/Black
+  // Utility
   white: '#FFFFFF',
   black: '#000000',
   transparent: 'transparent',
@@ -57,9 +63,10 @@ export const Spacing = {
 // ─── Border Radius ─────────────────────────────────────────────────────────────
 export const Radius = {
   sm: 6,
-  md: 10,
-  lg: 14,
-  xl: 20,
+  md: 12,
+  lg: 18,
+  xl: 24,
+  xxl: 28,
   full: 9999,
 } as const;
 
